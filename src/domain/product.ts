@@ -35,3 +35,17 @@ export interface Product {
 }
 
 export type ProductLookup = ReadonlyMap<string, Product>;
+
+const normalizeName = (name: string) => name.trim().toLocaleLowerCase("uk");
+
+/** Finds a product whose name or alias equals the given name, ignoring case. */
+export function findProductByName(products: Iterable<Product>, name: string): Product | undefined {
+  const wanted = normalizeName(name);
+  if (wanted === "") return undefined;
+  for (const product of products) {
+    if ([product.name, ...product.aliases].some((candidate) => normalizeName(candidate) === wanted)) {
+      return product;
+    }
+  }
+  return undefined;
+}

@@ -1,0 +1,30 @@
+.nav {
+  overflow-x: auto;
+}
+
+.list {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--color-muted);
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.link:hover {
+  color: var(--color-fg);
+}
+
+.link[aria-current="page"] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
