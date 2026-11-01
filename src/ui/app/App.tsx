@@ -1,3 +1,4 @@
+import { CookView } from "@/ui/features/cook/CookView";
 import { PantryView } from "@/ui/features/pantry/PantryView";
 import { RecipesView } from "@/ui/features/recipes/RecipesView";
 import { Navigation } from "@/ui/navigation/Navigation";
@@ -10,6 +11,8 @@ function Section({ route }: { route: Route }) {
   switch (route) {
     case "recipes":
       return <RecipesView />;
+    case "cook":
+      return <CookView />;
     case "pantry":
       return <PantryView />;
   }
