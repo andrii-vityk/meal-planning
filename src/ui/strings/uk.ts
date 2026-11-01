@@ -3,6 +3,7 @@
  * Components never contain Ukrainian literals.
  */
 import type { AiErrorCode } from "@/application/ports/ai";
+import type { Meal } from "@/domain/plan";
 import type { ProductCategory } from "@/domain/product";
 import type { Unit } from "@/domain/quantity";
 
@@ -36,6 +37,13 @@ const categories: Record<ProductCategory, string> = {
   other: "Інше",
 };
 
+const meals: Record<Meal, string> = {
+  breakfast: "Сніданок",
+  lunch: "Обід",
+  dinner: "Вечеря",
+  snack: "Перекус",
+};
+
 const aiErrors: Record<AiErrorCode, string> = {
   unavailable: "AI недоступний на цій сторінці для вашого акаунта.",
   rateLimited: "Досягнуто ліміту використання AI. Спробуйте пізніше.",
@@ -54,6 +62,8 @@ export const strings = {
     label: "Розділи",
     recipes: "Рецепти",
     cook: "Що приготувати",
+    plan: "План",
+    shopping: "Покупки",
     pantry: "Довідник",
   },
   data: {
@@ -62,6 +72,7 @@ export const strings = {
   },
   units,
   categories,
+  meals,
   aiErrors,
   common: {
     back: "Назад",
@@ -201,6 +212,47 @@ export const strings = {
     suggesting: "Шукаю заміни…",
     noSubstitutions: "Доброї заміни не знайшлося.",
     substitute: (product: string, suggestion: string) => `${product} → ${suggestion}`,
+  },
+  week: {
+    previous: "Попередній тиждень",
+    next: "Наступний тиждень",
+  },
+  plan: {
+    heading: "План на тиждень",
+    add: (meal: string, day: string) => `Додати: ${meal}, ${day}`,
+    leftovers: "залишки",
+    missingDish: "Страву видалено",
+    coverage: "Покриття за день",
+    covered: (nutrient: string) => `${nutrient}: є`,
+    notCovered: (nutrient: string) => `${nutrient}: немає`,
+    editEntry: (title: string) => `Змінити «${title}»`,
+    newEntry: "Нова страва в плані",
+    editHeading: "Страва в плані",
+    dishKind: "Що їмо",
+    kinds: { recipe: "Рецепт", framework: "Фреймворк", text: "Своїми словами" },
+    recipe: "Рецепт",
+    framework: "Фреймворк",
+    text: "Назва страви",
+    servings: "Порцій",
+    slots: "Коли їмо",
+    slotDay: "День",
+    slotMeal: "Прийом їжі",
+    addSlot: "Додати ще раз (залишки)",
+    removeSlot: (label: string) => `Прибрати ${label}`,
+    noRecipes: "Спершу збережіть хоча б один рецепт.",
+    noFrameworks: "Спершу створіть хоча б один фреймворк.",
+    invalid: "Оберіть страву, кількість порцій і хоча б один прийом їжі.",
+  },
+  shopping: {
+    heading: "Список покупок",
+    empty: "На цей тиждень нічого купувати не треба. Додайте страви в план або позиції вручну.",
+    asNeeded: "за потребою",
+    manual: "Додано вручну",
+    addLabel: "Додати позицію",
+    addPlaceholder: "Напр.: серветки",
+    add: "Додати",
+    bought: (name: string) => `Куплено: ${name}`,
+    stapleNote: "Базові запаси сюди не потрапляють.",
   },
 } as const;
 

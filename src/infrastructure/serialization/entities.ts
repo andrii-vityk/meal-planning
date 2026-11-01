@@ -50,7 +50,7 @@ export function parseProduct(id: string, raw: unknown): Product | null {
 }
 
 /** Documents are keyed by id, so the id itself is not stored inside them. */
-function toDocument(entity: { readonly id: string }): Json {
+export function toDocument(entity: { readonly id: string }): Json {
   const data: Json = { schemaVersion: SCHEMA_VERSION, ...structuredClone(entity) };
   delete data.id;
   return data;
