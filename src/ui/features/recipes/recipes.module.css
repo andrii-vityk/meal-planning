@@ -1,0 +1,228 @@
+.section {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.subheading {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty {
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: grid;
+  gap: 8px;
+  background: var(--color-surface);
+}
+
+.emptyHeading {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.card {
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 10px;
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: var(--color-accent);
+}
+
+.cardBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.chip {
+  background: var(--color-chip);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.tile {
+  --tile-hue: 28;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: hsl(var(--tile-hue) 45% 30%);
+  background: hsl(var(--tile-hue) 55% 88%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tile {
+    color: hsl(var(--tile-hue) 60% 82%);
+    background: hsl(var(--tile-hue) 30% 22%);
+  }
+}
+
+:root[data-theme="dark"] .tile {
+  color: hsl(var(--tile-hue) 60% 82%);
+  background: hsl(var(--tile-hue) 30% 22%);
+}
+
+.tileLarge {
+  width: 88px;
+  height: 88px;
+  font-size: 2.2rem;
+}
+
+.detailHeader {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.detailTitle {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.block {
+  display: grid;
+  gap: 10px;
+}
+
+.servings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.servingsInput {
+  width: 5em;
+}
+
+.ingredients {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.ingredients li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.amount {
+  color: var(--color-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.4em;
+  display: grid;
+  gap: 8px;
+  max-width: 65ch;
+}
+
+.notes {
+  margin: 0;
+  white-space: pre-wrap;
+  max-width: 65ch;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.fieldset {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ingredientRow {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: 6px;
+}
+
+@media (max-width: 560px) {
+  .ingredientRow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

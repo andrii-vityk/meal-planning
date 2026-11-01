@@ -56,4 +56,15 @@ export default tseslint.config(
   layer("application", ["@/infrastructure", "@/ui", "@/composition", "react", "react-dom"]),
   layer("infrastructure", ["@/ui", "@/composition"]),
   layer("ui", ["@/infrastructure", "@/composition"]),
+  // Tests wire real in-memory adapters, like the composition root does, so
+  // the layer rules apply to production code only.
+  {
+    files: ["src/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { patterns: [{ group: ["../*"], message: "Use the '@/' alias for imports outside the current folder." }] },
+      ],
+    },
+  },
 );

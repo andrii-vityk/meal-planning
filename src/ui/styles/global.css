@@ -8,6 +8,8 @@
   --color-line: #d7dbd1;
   --color-accent: #b5651d;
   --color-accent-ink: #ffffff;
+  --color-danger: #b3342c;
+  --color-chip: #eceee7;
 
   --font-body: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
   --text-base: 1rem;
@@ -25,9 +27,12 @@
     --color-line: #2f352d;
     --color-accent: #e0954f;
     --color-accent-ink: #1a1208;
+    --color-danger: #f08a80;
+    --color-chip: #262b25;
     color-scheme: dark;
   }
 }
+
 
 :root[data-theme="dark"] {
   --color-bg: #151814;
@@ -37,6 +42,8 @@
   --color-line: #2f352d;
   --color-accent: #e0954f;
   --color-accent-ink: #1a1208;
+  --color-danger: #f08a80;
+  --color-chip: #262b25;
   color-scheme: dark;
 }
 
@@ -47,6 +54,75 @@ body {
   font-family: var(--font-body);
   font-size: var(--text-base);
   line-height: 1.5;
+}
+
+/* Shared controls. Components use these class names directly; layout
+   lives in each component's CSS module. */
+.button {
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.button-secondary {
+  background: transparent;
+  color: var(--color-fg);
+  border-color: var(--color-line);
+  font-weight: 500;
+}
+
+.button-danger {
+  background: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.input {
+  font: inherit;
+  color: var(--color-fg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+textarea.input {
+  resize: vertical;
+  min-height: 6em;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.error {
+  color: var(--color-danger);
+  margin: 0;
+}
+
+.hint {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  margin: 0;
 }
 
 :focus-visible {
