@@ -1,4 +1,5 @@
 import type { AppDependencies } from "@/application/dependencies";
+import type { ManualShoppingItem, ShoppingCheck, WeekPlanEntry } from "@/domain/weekPlanning";
 import {
   parseFramework,
   parseProduct,
@@ -41,15 +42,15 @@ export function createPlatformDependencies(platform: PlatformCapabilities): AppD
       parse: parseFramework,
       serialize: serializeFramework,
     }),
-    planEntries: new PlatformRepository(platform.db, collections.planEntries, {
+    planEntries: new PlatformRepository<WeekPlanEntry>(platform.db, collections.planEntries, {
       parse: parsePlanEntry,
       serialize: serializeWeekRecord,
     }),
-    shoppingItems: new PlatformRepository(platform.db, collections.shoppingItems, {
+    shoppingItems: new PlatformRepository<ManualShoppingItem>(platform.db, collections.shoppingItems, {
       parse: parseShoppingItem,
       serialize: serializeWeekRecord,
     }),
-    shoppingChecks: new PlatformRepository(platform.db, collections.shoppingChecks, {
+    shoppingChecks: new PlatformRepository<ShoppingCheck>(platform.db, collections.shoppingChecks, {
       parse: parseShoppingCheck,
       serialize: serializeWeekRecord,
     }),
