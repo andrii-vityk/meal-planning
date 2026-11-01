@@ -1,0 +1,62 @@
+/* Design tokens. Every color is defined for light first, then redefined for
+   dark both for the OS preference and for an explicit data-theme choice. */
+:root {
+  --color-bg: #f6f6f2;
+  --color-surface: #ffffff;
+  --color-fg: #1d221c;
+  --color-muted: #5f675d;
+  --color-line: #d7dbd1;
+  --color-accent: #b5651d;
+  --color-accent-ink: #ffffff;
+
+  --font-body: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #151814;
+    --color-surface: #1d211c;
+    --color-fg: #e8ebe4;
+    --color-muted: #9aa396;
+    --color-line: #2f352d;
+    --color-accent: #e0954f;
+    --color-accent-ink: #1a1208;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #151814;
+  --color-surface: #1d211c;
+  --color-fg: #e8ebe4;
+  --color-muted: #9aa396;
+  --color-line: #2f352d;
+  --color-accent: #e0954f;
+  --color-accent-ink: #1a1208;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
