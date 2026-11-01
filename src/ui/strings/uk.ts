@@ -6,6 +6,13 @@ export const strings = {
   app: {
     title: "Кухня",
     tagline: "Рецепти, запаси й план харчування",
+    loading: "Завантаження…",
+  },
+  data: {
+    loading: "Завантажую дані…",
+    unreachable: "Не вдається дістатися до бази. Дані можуть бути неактуальні.",
+    summary: (products: number, recipes: number, frameworks: number) =>
+      `У довіднику ${products} продукт(ів), ${recipes} рецепт(ів), ${frameworks} фреймворк(ів).`,
   },
   emptyState: {
     heading: "Тут з'являться ваші рецепти",
