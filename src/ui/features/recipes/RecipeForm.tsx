@@ -5,7 +5,7 @@ import { saveRecipe } from "@/application/recipes";
 import { units } from "@/domain/quantity";
 import { useDependencies } from "@/ui/dependencies";
 import { useCollection } from "@/ui/hooks/useCollection";
-import { resizeImage } from "@/ui/images";
+import { resizeImage } from "@/ui/files";
 import { strings } from "@/ui/strings/uk";
 import type { FormErrors, IngredientRow, RecipeFormState } from "./recipeFormState";
 import { emptyRow, fromFormState, recipeToInput, toFormState } from "./recipeFormState";

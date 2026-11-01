@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { RecipeInput } from "@/application/recipes";
 import { aiErrorMessage, isCancellation } from "@/ui/aiErrors";
 import { useDependencies } from "@/ui/dependencies";
-import { resizeImage } from "@/ui/images";
+import { resizeImage } from "@/ui/files";
 import { strings } from "@/ui/strings/uk";
 import styles from "./recipes.module.css";
 

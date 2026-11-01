@@ -3,6 +3,7 @@ import { exportBackup, importBackup } from "@/application/backup";
 import { BackupFormatError } from "@/application/ports/backup";
 import { todayIso } from "@/ui/dates";
 import { useDependencies } from "@/ui/dependencies";
+import { readFileAsText } from "@/ui/files";
 import { strings } from "@/ui/strings/uk";
 import styles from "./data.module.css";
 
@@ -26,7 +27,7 @@ export function DataPanel() {
     setMessage(null);
     startWork(async () => {
       try {
-        const summary = await importBackup(dependencies, await file.text());
+        const summary = await importBackup(dependencies, await readFileAsText(file));
         setMessage({ kind: "info", text: strings.backup.imported(summary.records) });
       } catch (error) {
         setMessage({

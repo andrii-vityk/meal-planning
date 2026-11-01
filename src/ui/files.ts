@@ -19,3 +19,13 @@ export async function resizeImage(file: Blob, maxSide = 1600, quality = 0.85): P
     canvas.toBlob((blob) => resolve(blob ?? file), "image/jpeg", quality);
   });
 }
+
+/** Reads a chosen file as text (FileReader works in every browser and in tests). */
+export function readFileAsText(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read the file"));
+    reader.readAsText(file);
+  });
+}
