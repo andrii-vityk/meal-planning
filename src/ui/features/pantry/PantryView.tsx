@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { DataPanel } from "@/ui/features/data/DataPanel";
 import { strings } from "@/ui/strings/uk";
 import { FrameworksPanel } from "./FrameworksPanel";
 import { ProductsPanel } from "./ProductsPanel";
 import styles from "./pantry.module.css";
 
-type Tab = "products" | "frameworks";
-const tabs: readonly Tab[] = ["products", "frameworks"];
+type Tab = "products" | "frameworks" | "data";
+const tabs: readonly Tab[] = ["products", "frameworks", "data"];
 
 export function PantryView() {
   const [tab, setTab] = useState<Tab>("products");
@@ -29,7 +30,7 @@ export function PantryView() {
         ))}
       </div>
       <div role="tabpanel" id={`pantry-panel-${tab}`} aria-labelledby={`pantry-tab-${tab}`}>
-        {tab === "products" ? <ProductsPanel /> : <FrameworksPanel />}
+        {tab === "products" ? <ProductsPanel /> : tab === "frameworks" ? <FrameworksPanel /> : <DataPanel />}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { RecipeInput } from "@/application/recipes";
 import { aiErrorMessage, isCancellation } from "@/ui/aiErrors";
 import { useDependencies } from "@/ui/dependencies";
+import { resizeImage } from "@/ui/images";
 import { strings } from "@/ui/strings/uk";
 import styles from "./recipes.module.css";
 
@@ -15,6 +16,7 @@ export function RecipeImport({ onCancel, onDraft }: RecipeImportProps) {
   const [text, setText] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [image, setImage] = useState<File | null>(null);
   const [isParsing, startParsing] = useTransition();
   // A ref, not state: changing the controller must not re-render anything.
   const controller = useRef<AbortController | null>(null);
@@ -29,7 +31,8 @@ export function RecipeImport({ onCancel, onDraft }: RecipeImportProps) {
     const { signal } = controller.current;
     startParsing(async () => {
       try {
-        const draft = await ai.parseRecipe({ text }, [...products.getSnapshot().items.values()], signal);
+        const source = image ? { text, image: await resizeImage(image) } : { text };
+        const draft = await ai.parseRecipe(source, [...products.getSnapshot().items.values()], signal);
         onDraft({
           ...draft,
           kidFriendly: false,
@@ -67,6 +70,18 @@ export function RecipeImport({ onCancel, onDraft }: RecipeImportProps) {
       </label>
 
       <label className="field">
+        <span className="label">{strings.recipeImport.image}</span>
+        <input
+          id="recipe-import-image"
+          type="file"
+          accept="image/*"
+          disabled={isParsing}
+          onChange={(event) => setImage(event.target.files?.[0] ?? null)}
+        />
+        {image && <span className="hint">{strings.recipeImport.imageChosen(image.name)}</span>}
+      </label>
+
+      <label className="field">
         <span className="label">{strings.recipeImport.sourceUrl}</span>
         <input
           id="recipe-import-source"
@@ -85,7 +100,7 @@ export function RecipeImport({ onCancel, onDraft }: RecipeImportProps) {
       )}
 
       <div className={styles.actions}>
-        <button type="button" className="button" onClick={parse} disabled={isParsing || text.trim() === ""}>
+        <button type="button" className="button" onClick={parse} disabled={isParsing || (text.trim() === "" && !image)}>
           {isParsing ? strings.recipeImport.parsing : strings.recipeImport.parse}
         </button>
         <button type="button" className="button button-secondary" onClick={cancel}>

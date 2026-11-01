@@ -1,4 +1,6 @@
 import type { AiService } from "@/application/ports/ai";
+import type { BackupCodec } from "@/application/ports/backup";
+import type { FileSaver, PhotoStorage } from "@/application/ports/files";
 import type { Repository } from "@/application/ports/repository";
 import type { Framework } from "@/domain/framework";
 import type { Product } from "@/domain/product";
@@ -17,4 +19,7 @@ export interface AppDependencies {
   readonly shoppingItems: Repository<ManualShoppingItem>;
   readonly shoppingChecks: Repository<ShoppingCheck>;
   readonly ai: AiService;
+  readonly photos: PhotoStorage;
+  readonly files: FileSaver;
+  readonly backup: BackupCodec;
 }

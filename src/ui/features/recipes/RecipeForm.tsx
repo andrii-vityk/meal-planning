@@ -5,9 +5,11 @@ import { saveRecipe } from "@/application/recipes";
 import { units } from "@/domain/quantity";
 import { useDependencies } from "@/ui/dependencies";
 import { useCollection } from "@/ui/hooks/useCollection";
+import { resizeImage } from "@/ui/images";
 import { strings } from "@/ui/strings/uk";
 import type { FormErrors, IngredientRow, RecipeFormState } from "./recipeFormState";
 import { emptyRow, fromFormState, recipeToInput, toFormState } from "./recipeFormState";
+import { DishPhoto } from "./DishPhoto";
 import styles from "./recipes.module.css";
 
 interface RecipeFormProps {
@@ -33,6 +35,22 @@ export function RecipeForm({ recipeId, initial, onCancel, onSaved }: RecipeFormP
   const [errors, setErrors] = useState<FormErrors>({});
   const [saveError, setSaveError] = useState(false);
   const [isSaving, startSaving] = useTransition();
+  const [photoId, setPhotoId] = useState<string | undefined>(existing?.photoAssetId ?? initial?.photoAssetId);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const [isUploading, startUploading] = useTransition();
+
+  const choosePhoto = (file: File | undefined) => {
+    if (!file) return;
+    setPhotoFailed(false);
+    startUploading(async () => {
+      try {
+        const resized = await resizeImage(file);
+        setPhotoId(await dependencies.photos.upload(resized));
+      } catch {
+        setPhotoFailed(true);
+      }
+    });
+  };
 
   const update = (patch: Partial<RecipeFormState>) => setForm((current) => ({ ...current, ...patch }));
 
@@ -50,7 +68,7 @@ export function RecipeForm({ recipeId, initial, onCancel, onSaved }: RecipeFormP
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result = fromFormState(form, recipeId, existing?.photoAssetId);
+    const result = fromFormState(form, recipeId, photoId);
     if ("errors" in result) {
       setErrors(result.errors);
       return;
@@ -84,6 +102,34 @@ export function RecipeForm({ recipeId, initial, onCancel, onSaved }: RecipeFormP
         />
         {errors.title && <span className="error">{strings.recipeForm.titleRequired}</span>}
       </label>
+
+      {(photoId || dependencies.photos.canUpload) && (
+        <div className="field">
+          <span className="label">{strings.recipeForm.photo}</span>
+          <div className={styles.photoField}>
+            {photoId && <DishPhoto title={form.title} photoId={photoId} large />}
+            {dependencies.photos.canUpload && (
+              <label className="button button-secondary">
+                {isUploading ? strings.recipeForm.uploadingPhoto : strings.recipeForm.choosePhoto}
+                <input
+                  id="recipe-photo-input"
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={isUploading}
+                  onChange={(event) => choosePhoto(event.target.files?.[0])}
+                />
+              </label>
+            )}
+            {photoId && (
+              <button type="button" className="button button-secondary" onClick={() => setPhotoId(undefined)}>
+                {strings.recipeForm.removePhoto}
+              </button>
+            )}
+          </div>
+          {photoFailed && <span className="error">{strings.recipeForm.photoFailed}</span>}
+        </div>
+      )}
 
       <div className={styles.row}>
         <label className="field">
@@ -221,7 +267,7 @@ export function RecipeForm({ recipeId, initial, onCancel, onSaved }: RecipeFormP
       {saveError && <p className="error" role="alert">{strings.common.unexpectedError}</p>}
 
       <div className={styles.actions}>
-        <button type="submit" className="button" disabled={isSaving}>
+        <button type="submit" className="button" disabled={isSaving || isUploading}>
           {isSaving ? strings.common.saving : strings.common.save}
         </button>
         <button type="button" className="button button-secondary" onClick={onCancel} disabled={isSaving}>

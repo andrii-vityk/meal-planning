@@ -4,7 +4,7 @@ import { useDependencies } from "@/ui/dependencies";
 import { formatQuantity } from "@/ui/format";
 import { useCollection } from "@/ui/hooks/useCollection";
 import { strings } from "@/ui/strings/uk";
-import { DishTile } from "./DishTile";
+import { DishPhoto } from "./DishPhoto";
 import styles from "./recipes.module.css";
 
 interface RecipeDetailProps {
@@ -52,7 +52,7 @@ export function RecipeDetail({ recipeId, onBack, onEdit }: RecipeDetailProps) {
       </div>
 
       <header className={styles.detailHeader}>
-        <DishTile title={recipe.title} large />
+        <DishPhoto title={recipe.title} photoId={recipe.photoAssetId} large />
         <div className={styles.detailTitle}>
           <h2 id="recipe-title" className={styles.heading}>
             {recipe.title}

@@ -14,7 +14,9 @@ import {
   parseShoppingItem,
   serializeWeekRecord,
 } from "@/infrastructure/serialization/weekRecords";
+import { JsonBackupCodec } from "@/infrastructure/serialization/backupCodec";
 import { PlatformAi } from "./platformAi";
+import { PlatformFileSaver, PlatformPhotoStorage } from "./platformFiles";
 import { PlatformRepository } from "./platformRepository";
 import type { PlatformCapabilities } from "./runtime";
 
@@ -55,5 +57,8 @@ export function createPlatformDependencies(platform: PlatformCapabilities): AppD
       serialize: serializeWeekRecord,
     }),
     ai: new PlatformAi(platform.sample),
+    photos: new PlatformPhotoStorage(platform.assets),
+    files: new PlatformFileSaver(platform.downloads),
+    backup: new JsonBackupCodec(),
   };
 }
