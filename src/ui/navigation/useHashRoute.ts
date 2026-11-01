@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 /** Top-level sections, addressed as #name in the page URL. */
-export const routes = ["recipes"] as const;
+export const routes = ["recipes", "pantry"] as const;
 
 export type Route = (typeof routes)[number];
 
