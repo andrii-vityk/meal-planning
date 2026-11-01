@@ -3,8 +3,10 @@ import type { Framework } from "@/domain/framework";
 import type { Product } from "@/domain/product";
 import type { Recipe } from "@/domain/recipe";
 import type { ManualShoppingItem, ShoppingCheck, WeekPlanEntry } from "@/domain/weekPlanning";
+import { JsonBackupCodec } from "@/infrastructure/serialization/backupCodec";
 import { InMemoryRepository } from "./inMemoryRepository";
 import { LocalAi } from "./localAi";
+import { BrowserFileSaver, MemoryPhotoStorage } from "./memoryFiles";
 import { sampleFrameworks, sampleProducts, sampleRecipes } from "./sampleData";
 
 export interface InMemoryOptions {
@@ -21,5 +23,8 @@ export function createInMemoryDependencies({ withSampleData = false }: InMemoryO
     shoppingItems: new InMemoryRepository<ManualShoppingItem>(),
     shoppingChecks: new InMemoryRepository<ShoppingCheck>(),
     ai: new LocalAi(),
+    photos: new MemoryPhotoStorage(),
+    files: new BrowserFileSaver(),
+    backup: new JsonBackupCodec(),
   };
 }

@@ -1,0 +1,29 @@
+.section {
+  display: grid;
+  gap: 14px;
+  max-width: 65ch;
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.confirm {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.confirm p {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

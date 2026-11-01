@@ -3,7 +3,7 @@ import type { Recipe } from "@/domain/recipe";
 import { useDependencies } from "@/ui/dependencies";
 import { useCollection } from "@/ui/hooks/useCollection";
 import { strings } from "@/ui/strings/uk";
-import { DishTile } from "./DishTile";
+import { DishPhoto } from "./DishPhoto";
 import styles from "./recipes.module.css";
 
 interface RecipeListProps {
@@ -71,7 +71,7 @@ export function RecipeList({ onOpen, onCreate, onImport }: RecipeListProps) {
           {visible.map((recipe) => (
             <li key={recipe.id}>
               <button type="button" className={styles.card} onClick={() => onOpen(recipe.id)}>
-                <DishTile title={recipe.title} />
+                <DishPhoto title={recipe.title} photoId={recipe.photoAssetId} />
                 <span className={styles.cardBody}>
                   <span className={styles.cardTitle}>{recipe.title}</span>
                   <span className={styles.meta}>
