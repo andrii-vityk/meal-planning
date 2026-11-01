@@ -1,6 +1,8 @@
 import { CookView } from "@/ui/features/cook/CookView";
 import { PantryView } from "@/ui/features/pantry/PantryView";
+import { PlanView } from "@/ui/features/plan/PlanView";
 import { RecipesView } from "@/ui/features/recipes/RecipesView";
+import { ShoppingView } from "@/ui/features/shopping/ShoppingView";
 import { Navigation } from "@/ui/navigation/Navigation";
 import type { Route } from "@/ui/navigation/useHashRoute";
 import { useHashRoute } from "@/ui/navigation/useHashRoute";
@@ -13,6 +15,10 @@ function Section({ route }: { route: Route }) {
       return <RecipesView />;
     case "cook":
       return <CookView />;
+    case "plan":
+      return <PlanView />;
+    case "shopping":
+      return <ShoppingView />;
     case "pantry":
       return <PantryView />;
   }

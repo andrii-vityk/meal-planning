@@ -7,6 +7,12 @@ import {
   serializeProduct,
   serializeRecipe,
 } from "@/infrastructure/serialization/entities";
+import {
+  parsePlanEntry,
+  parseShoppingCheck,
+  parseShoppingItem,
+  serializeWeekRecord,
+} from "@/infrastructure/serialization/weekRecords";
 import { PlatformAi } from "./platformAi";
 import { PlatformRepository } from "./platformRepository";
 import type { PlatformCapabilities } from "./runtime";
@@ -16,6 +22,9 @@ export const collections = {
   products: "products",
   recipes: "recipes",
   frameworks: "frameworks",
+  planEntries: "planEntries",
+  shoppingItems: "shoppingItems",
+  shoppingChecks: "shoppingChecks",
 } as const;
 
 export function createPlatformDependencies(platform: PlatformCapabilities): AppDependencies {
@@ -31,6 +40,18 @@ export function createPlatformDependencies(platform: PlatformCapabilities): AppD
     frameworks: new PlatformRepository(platform.db, collections.frameworks, {
       parse: parseFramework,
       serialize: serializeFramework,
+    }),
+    planEntries: new PlatformRepository(platform.db, collections.planEntries, {
+      parse: parsePlanEntry,
+      serialize: serializeWeekRecord,
+    }),
+    shoppingItems: new PlatformRepository(platform.db, collections.shoppingItems, {
+      parse: parseShoppingItem,
+      serialize: serializeWeekRecord,
+    }),
+    shoppingChecks: new PlatformRepository(platform.db, collections.shoppingChecks, {
+      parse: parseShoppingCheck,
+      serialize: serializeWeekRecord,
     }),
     ai: new PlatformAi(platform.sample),
   };

@@ -1,0 +1,203 @@
+.section {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.day {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.dayHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.dayTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dayTitle::first-letter {
+  text-transform: uppercase;
+}
+
+.coverage {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 0.75rem;
+}
+
+.covered,
+.notCovered {
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.covered {
+  background: var(--color-chip);
+  color: var(--color-fg);
+}
+
+.notCovered {
+  color: var(--color-muted);
+  border: 1px dashed var(--color-line);
+}
+
+.meals {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.meal {
+  display: grid;
+  grid-template-columns: 6.5em minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.mealName {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  padding-top: 4px;
+}
+
+.mealEntries {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.entry,
+.add {
+  font: inherit;
+  font-size: 0.875rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  border-radius: 8px;
+  padding: 3px 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.entry:hover,
+.add:hover {
+  border-color: var(--color-accent);
+}
+
+.add {
+  color: var(--color-muted);
+  border-style: dashed;
+}
+
+.leftover {
+  color: var(--color-muted);
+}
+
+.editor {
+  display: grid;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.kinds {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slotChips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.slotChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-chip);
+  border-radius: 999px;
+  padding: 2px 4px 2px 10px;
+}
+
+.chipRemove {
+  font: inherit;
+  line-height: 1;
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.slotPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.slotPicker > :global(.input) {
+  width: auto;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

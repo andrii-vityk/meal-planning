@@ -71,3 +71,38 @@
 ```
 
 Обов'язкове: `title`; у слоті — `id`, `name`; у варіанті — `id` і `productId` або `text` відповідно до `kind`.
+
+### `planEntries`
+
+Одна страва в плані тижня. Окремий документ на кожну страву, щоб одночасне редагування одного тижня з кількох клієнтів не перезаписувало чужі зміни.
+
+```json
+{
+  "schemaVersion": 1,
+  "weekStart": "2026-11-02",
+  "dish": { "kind": "recipe", "recipeId": "<id рецепта>" },
+  "servings": 4,
+  "slots": [
+    { "date": "2026-11-02", "meal": "dinner" },
+    { "date": "2026-11-03", "meal": "lunch" }
+  ]
+}
+```
+
+`weekStart` — понеділок тижня. `dish.kind`: `recipe` (`recipeId`), `framework` (`frameworkId`, `choices`: id слота → id варіанта) або `text` (`text`). `meal` — одне з `meals` (`src/domain/plan.ts`). Перший слот — день приготування, решта — залишки.
+
+### `shoppingItems`
+
+Позиція списку покупок, додана вручну.
+
+```json
+{ "schemaVersion": 1, "weekStart": "2026-11-02", "text": "Серветки", "checked": false }
+```
+
+### `shoppingChecks`
+
+Відмітка «куплено» для згенерованого рядка. Документ існує — куплено; немає документа — не куплено. Id документа: `<weekStart>~<productId>`.
+
+```json
+{ "schemaVersion": 1, "weekStart": "2026-11-02", "productId": "<id продукту>" }
+```
