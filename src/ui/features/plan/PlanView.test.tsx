@@ -99,7 +99,10 @@ describe("PlanView", () => {
       expect(screen.queryByRole("button", { name: strings.draft.replace("Курка теріякі з рисом") })).not.toBeInTheDocument(),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: strings.draft.accept }));
+    // The replacement request finishes after the new dish appears.
+    const accept = screen.getByRole("button", { name: strings.draft.accept });
+    await waitFor(() => expect(accept).toBeEnabled());
+    fireEvent.click(accept);
 
     await waitFor(() => expect(dependencies.planEntries.getSnapshot().items.size).toBe(28));
     expect(screen.queryByRole("region", { name: strings.draft.heading })).not.toBeInTheDocument();
