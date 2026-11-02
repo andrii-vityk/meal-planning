@@ -120,3 +120,30 @@ describe("DishesView", () => {
     expect(dependencies.frameworks.getSnapshot().items.has("bowl")).toBe(false);
   });
 });
+
+describe("adding a dish to the plan", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 10, 4, 12));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("plans a framework from its page with the chosen options", async () => {
+    const { dependencies } = renderApp("framework-bowl", { withSampleData: true });
+
+    fireEvent.click(screen.getByRole("button", { name: strings.plan.addToPlan }));
+    fireEvent.click(screen.getByRole("button", { name: strings.plan.cell("четвер", strings.meals.dinner) }));
+    fireEvent.click(screen.getByRole("button", { name: strings.common.save }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(strings.plan.saved("Боул"));
+    const [entry] = dependencies.planEntries.getSnapshot().items.values();
+    expect(entry).toMatchObject({
+      weekStart: "2026-11-02",
+      dish: { kind: "framework", frameworkId: "bowl" },
+      slots: [{ date: "2026-11-05", meal: "dinner" }],
+    });
+  });
+});

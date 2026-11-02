@@ -12,10 +12,11 @@ import { useDependencies } from "@/ui/dependencies";
 import { dishTitle } from "@/ui/dishTitle";
 import { useCollection } from "@/ui/hooks/useCollection";
 import { strings } from "@/ui/strings/uk";
-import { PlanEntryForm } from "./PlanEntryForm";
+import { useBackClosable } from "@/ui/hooks/useBackClosable";
+import { PlanEntryPanel } from "./PlanEntryPanel";
 import styles from "./plan.module.css";
 
-type Editor = { readonly entryId: string } | { readonly slot: MealSlot } | null;
+type Editor = { readonly entryId: string } | { readonly slot: MealSlot };
 
 export function PlanView() {
   const dependencies = useDependencies();
@@ -26,7 +27,7 @@ export function PlanView() {
 
   // A function initializer, so "today" is computed once, not on every render.
   const [weekStart, setWeekStart] = useState<IsoDate>(() => startOfWeek(todayIso()));
-  const [editor, setEditor] = useState<Editor>(null);
+  const [editor, openEditor, closeEditor] = useBackClosable<Editor>();
 
   const plan = weekPlan(weekStart, entries.values());
   const coverage = nutritionCoverage(plan, { products, recipes, frameworks });
@@ -45,19 +46,16 @@ export function PlanView() {
         </h2>
         <WeekSwitcher
           weekStart={weekStart}
-          onChange={(next) => {
-            setWeekStart(next);
-            setEditor(null);
-          }}
+          onChange={setWeekStart}
         />
       </div>
 
       {editor && (
-        <PlanEntryForm
-          key={"entryId" in editor ? editor.entryId : `${editor.slot.date}-${editor.slot.meal}`}
+        <PlanEntryPanel
           weekStart={weekStart}
           {...("entryId" in editor ? { entryId: editor.entryId } : { initialSlot: editor.slot })}
-          onDone={() => setEditor(null)}
+          onClose={closeEditor}
+          onSaved={closeEditor}
         />
       )}
 
@@ -97,7 +95,7 @@ export function PlanView() {
                           type="button"
                           className={styles.entry}
                           aria-label={strings.plan.editEntry(title)}
-                          onClick={() => setEditor({ entryId: entry.id })}
+                          onClick={() => openEditor({ entryId: entry.id })}
                         >
                           {title}
                           {isLeftover && <span className={styles.leftover}> · {strings.plan.leftovers}</span>}
@@ -108,7 +106,7 @@ export function PlanView() {
                       type="button"
                       className={styles.add}
                       aria-label={strings.plan.add(strings.meals[meal], formatWeekday(date))}
-                      onClick={() => setEditor({ slot: { date, meal } })}
+                      onClick={() => openEditor({ slot: { date, meal } })}
                     >
                       +
                     </button>

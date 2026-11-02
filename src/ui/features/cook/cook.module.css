@@ -124,3 +124,9 @@
   display: grid;
   gap: 2px;
 }
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
