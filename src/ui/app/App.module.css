@@ -13,6 +13,13 @@
   gap: 4px;
 }
 
+/* Room for the bottom tab bar on phones (see Navigation.module.css). */
+@media (max-width: 640px) {
+  .shell {
+    padding-block-end: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .title {
   margin: 0;
   font-size: var(--text-xl);

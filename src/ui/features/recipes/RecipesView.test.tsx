@@ -1,16 +1,16 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { renderWithDependencies } from "@/test/renderWithDependencies";
 import { strings } from "@/ui/strings/uk";
-import { RecipesView } from "./RecipesView";
+import { renderApp } from "@/test/renderApp";
 
 const type = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
 describe("RecipesView", () => {
   it("creates a recipe with a new product and opens it", async () => {
-    const { dependencies } = renderWithDependencies(<RecipesView />);
+    const { dependencies } = renderApp("recipes");
 
     fireEvent.click(screen.getByRole("button", { name: strings.recipes.create }));
+    await screen.findByRole("heading", { level: 2, name: strings.recipeForm.newHeading });
     type(strings.recipeForm.title, "Гречка з грибами");
     type(`${strings.recipeForm.productName} 1`, "Гречка");
     type(`${strings.recipeForm.amount} 1`, "200");
@@ -23,10 +23,11 @@ describe("RecipesView", () => {
     expect([...dependencies.products.getSnapshot().items.values()].map((product) => product.name)).toEqual(["Гречка"]);
   });
 
-  it("scales ingredient amounts when servings change", () => {
-    renderWithDependencies(<RecipesView />, { withSampleData: true });
+  it("scales ingredient amounts when servings change", async () => {
+    renderApp("recipes", { withSampleData: true });
 
     fireEvent.click(screen.getByRole("button", { name: /Курка теріякі/ }));
+    await screen.findByRole("heading", { level: 2, name: /Курка теріякі/ });
     expect(screen.getByText("400 г")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(strings.recipes.servings), { target: { value: "4" } });
@@ -34,19 +35,21 @@ describe("RecipesView", () => {
     expect(screen.getByText("800 г")).toBeInTheDocument();
   });
 
-  it("validates the form before saving", () => {
-    renderWithDependencies(<RecipesView />);
+  it("validates the form before saving", async () => {
+    renderApp("recipes");
 
     fireEvent.click(screen.getByRole("button", { name: strings.recipes.create }));
+    await screen.findByRole("heading", { level: 2, name: strings.recipeForm.newHeading });
     fireEvent.click(screen.getByRole("button", { name: strings.common.save }));
 
     expect(screen.getByText(strings.recipeForm.titleRequired)).toBeInTheDocument();
   });
 
   it("turns pasted text into a prefilled form", async () => {
-    renderWithDependencies(<RecipesView />);
+    renderApp("recipes");
 
     fireEvent.click(screen.getByRole("button", { name: strings.recipes.import }));
+    await screen.findByRole("heading", { level: 2, name: strings.recipeImport.heading });
     type(strings.recipeImport.text, "Омлет\nЗбити яйця\nСмажити 3 хв");
     fireEvent.click(screen.getByRole("button", { name: strings.recipeImport.parse }));
 
@@ -55,9 +58,10 @@ describe("RecipesView", () => {
   });
 
   it("deletes a recipe after confirmation", async () => {
-    const { dependencies } = renderWithDependencies(<RecipesView />, { withSampleData: true });
+    const { dependencies } = renderApp("recipes", { withSampleData: true });
 
     fireEvent.click(screen.getByRole("button", { name: /Курка теріякі/ }));
+    await screen.findByRole("heading", { level: 2, name: /Курка теріякі/ });
     fireEvent.click(screen.getByRole("button", { name: strings.common.delete }));
     fireEvent.click(screen.getByRole("button", { name: strings.common.confirmDelete }));
 
