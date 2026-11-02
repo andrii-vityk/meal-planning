@@ -28,3 +28,47 @@
   background: var(--color-fg);
   color: var(--color-bg);
 }
+
+/* Phones: a tab bar fixed to the bottom edge, within thumb reach. */
+@media (max-width: 640px) {
+  .nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 10;
+    overflow: visible;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-line);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .list {
+    gap: 0;
+  }
+
+  .item {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .link {
+    display: grid;
+    place-items: center;
+    min-height: 56px;
+    padding: 6px 2px;
+    border-radius: 0;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .link[aria-current="page"] {
+    background: transparent;
+    color: var(--color-accent);
+    font-weight: 700;
+    box-shadow: inset 0 3px 0 var(--color-accent);
+  }
+}

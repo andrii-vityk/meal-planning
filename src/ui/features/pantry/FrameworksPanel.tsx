@@ -1,26 +1,17 @@
-import { useState } from "react";
 import { useDependencies } from "@/ui/dependencies";
 import { useCollection } from "@/ui/hooks/useCollection";
 import { strings } from "@/ui/strings/uk";
-import { FrameworkForm } from "./FrameworkForm";
 import styles from "./pantry.module.css";
 
-type Screen = { readonly kind: "list" } | { readonly kind: "edit"; readonly frameworkId?: string };
+interface FrameworksPanelProps {
+  onCreate: () => void;
+  onEdit: (frameworkId: string) => void;
+}
 
-export function FrameworksPanel() {
+export function FrameworksPanel({ onCreate, onEdit }: FrameworksPanelProps) {
   const { frameworks, products } = useDependencies();
   const snapshot = useCollection(frameworks);
   const productItems = useCollection(products).items;
-  const [screen, setScreen] = useState<Screen>({ kind: "list" });
-
-  if (screen.kind === "edit") {
-    return (
-      <FrameworkForm
-        {...(screen.frameworkId && { frameworkId: screen.frameworkId })}
-        onDone={() => setScreen({ kind: "list" })}
-      />
-    );
-  }
 
   const list = [...snapshot.items.values()].toSorted((a, b) => a.title.localeCompare(b.title, "uk"));
 
@@ -30,7 +21,7 @@ export function FrameworksPanel() {
         <h2 id="frameworks-heading" className={styles.heading}>
           {strings.frameworks.heading}
         </h2>
-        <button type="button" className="button" onClick={() => setScreen({ kind: "edit" })}>
+        <button type="button" className="button" onClick={onCreate}>
           {strings.frameworks.create}
         </button>
       </div>
@@ -45,7 +36,7 @@ export function FrameworksPanel() {
               <button
                 type="button"
                 className={styles.frameworkCard}
-                onClick={() => setScreen({ kind: "edit", frameworkId: framework.id })}
+                onClick={() => onEdit(framework.id)}
               >
                 <span className={styles.itemName}>{framework.title}</span>
                 {framework.description && <span className="hint">{framework.description}</span>}

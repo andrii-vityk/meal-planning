@@ -60,10 +60,10 @@ export const strings = {
   },
   navigation: {
     label: "Розділи",
-    recipes: "Рецепти",
-    cook: "Що приготувати",
     plan: "План",
+    cook: "Що приготувати",
     shopping: "Покупки",
+    recipes: "Рецепти",
     pantry: "Довідник",
   },
   data: {

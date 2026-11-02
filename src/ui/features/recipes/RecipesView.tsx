@@ -1,55 +1,72 @@
 import { useState } from "react";
 import type { RecipeInput } from "@/application/recipes";
+import { goBack, navigate } from "@/ui/navigation/router";
+import type { Route, RecipeScreen } from "@/ui/navigation/routes";
 import { RecipeDetail } from "./RecipeDetail";
 import { RecipeForm } from "./RecipeForm";
 import { RecipeImport } from "./RecipeImport";
 import { RecipeList } from "./RecipeList";
 
-/**
- * What the recipes section shows right now. A union of the possible
- * screens instead of several booleans: impossible combinations
- * ("editing and importing at once") cannot be expressed.
- */
-type Screen =
-  | { readonly kind: "list" }
-  | { readonly kind: "detail"; readonly recipeId: string }
-  | { readonly kind: "create"; readonly draft?: RecipeInput }
-  | { readonly kind: "edit"; readonly recipeId: string }
-  | { readonly kind: "import" };
+const recipesRoute = (screen: RecipeScreen): Route => ({ section: "recipes", screen });
+const list = recipesRoute({ kind: "list" });
+const detail = (recipeId: string) => recipesRoute({ kind: "detail", recipeId });
 
-export function RecipesView() {
-  const [screen, setScreen] = useState<Screen>({ kind: "list" });
-  const showList = () => setScreen({ kind: "list" });
-  const showDetail = (recipeId: string) => setScreen({ kind: "detail", recipeId });
+/**
+ * Which screen is shown comes from the address (see navigation/routes.ts),
+ * so Back and links work. Only what cannot live in an address stays in
+ * state here: the AI draft handed from the import screen to the form.
+ */
+export function RecipesView({ screen }: { screen: RecipeScreen }) {
+  const [draft, setDraft] = useState<RecipeInput | undefined>(undefined);
 
   switch (screen.kind) {
     case "list":
       return (
         <RecipeList
-          onOpen={showDetail}
-          onCreate={() => setScreen({ kind: "create" })}
-          onImport={() => setScreen({ kind: "import" })}
+          onOpen={(recipeId) => navigate(detail(recipeId))}
+          onCreate={() => {
+            setDraft(undefined);
+            navigate(recipesRoute({ kind: "create" }));
+          }}
+          onImport={() => navigate(recipesRoute({ kind: "import" }))}
         />
       );
     case "detail":
       return (
         <RecipeDetail
           recipeId={screen.recipeId}
-          onBack={showList}
-          onEdit={() => setScreen({ kind: "edit", recipeId: screen.recipeId })}
+          onBack={() => goBack(list)}
+          onEdit={() => navigate(recipesRoute({ kind: "edit", recipeId: screen.recipeId }))}
         />
       );
     case "create":
-      return <RecipeForm {...(screen.draft && { initial: screen.draft })} onCancel={showList} onSaved={showDetail} />;
+      return (
+        <RecipeForm
+          {...(draft && { initial: draft })}
+          onCancel={() => goBack(list)}
+          // The form screen is replaced by the saved recipe: Back from it
+          // returns to the list, not to an empty form.
+          onSaved={(recipeId) => navigate(detail(recipeId), { replace: true })}
+        />
+      );
     case "edit":
       return (
         <RecipeForm
+          key={screen.recipeId}
           recipeId={screen.recipeId}
-          onCancel={() => showDetail(screen.recipeId)}
-          onSaved={showDetail}
+          onCancel={() => goBack(detail(screen.recipeId))}
+          onSaved={() => goBack(detail(screen.recipeId))}
         />
       );
     case "import":
-      return <RecipeImport onCancel={showList} onDraft={(draft) => setScreen({ kind: "create", draft })} />;
+      return (
+        <RecipeImport
+          onCancel={() => goBack(list)}
+          onDraft={(next) => {
+            setDraft(next);
+            navigate(recipesRoute({ kind: "create" }), { replace: true });
+          }}
+        />
+      );
   }
 }
