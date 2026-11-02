@@ -6,6 +6,7 @@ import { weekDates } from "@/domain/calendar";
 import type { Framework } from "@/domain/framework";
 import type { Dish, MealSlot } from "@/domain/plan";
 import { meals } from "@/domain/plan";
+import { slotKey } from "@/domain/weekDraft";
 import type { WeekPlanEntry } from "@/domain/weekPlanning";
 import { Sheet } from "@/ui/components/Sheet";
 import { WeekSwitcher } from "@/ui/components/WeekSwitcher";
@@ -47,7 +48,6 @@ interface DishOption {
   readonly dish: Dish;
 }
 
-const slotKey = (slot: MealSlot) => `${slot.date}|${slot.meal}`;
 const resultLimit = 8;
 
 /**
@@ -290,10 +290,12 @@ interface SlotGridProps {
   weekStart: IsoDate;
   selected: readonly MealSlot[];
   onToggle: (slot: MealSlot) => void;
+  /** Slots that cannot be chosen, by `slotKey`. */
+  disabled?: ReadonlySet<string>;
 }
 
 /** Days across, meals down: one tap per meal the dish covers. */
-export function SlotGrid({ weekStart, selected, onToggle }: SlotGridProps) {
+export function SlotGrid({ weekStart, selected, onToggle, disabled }: SlotGridProps) {
   const chosen = new Set(selected.map(slotKey));
   const dates = weekDates(weekStart);
   return (
@@ -326,6 +328,7 @@ export function SlotGrid({ weekStart, selected, onToggle }: SlotGridProps) {
                       type="button"
                       className={styles.cell}
                       aria-pressed={isOn}
+                      disabled={disabled?.has(slotKey(slot))}
                       aria-label={strings.plan.cell(formatWeekday(date), strings.meals[meal])}
                       onClick={() => onToggle(slot)}
                     >

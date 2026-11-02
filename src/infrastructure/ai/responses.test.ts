@@ -1,5 +1,5 @@
 import { AiError } from "@/application/ports/ai";
-import { readClassification, readProductMatch, readRecipeDraft, readSubstitutions } from "./responses";
+import { readClassification, readProductMatch, readRecipeDraft, readSubstitutions, readWeekDraft } from "./responses";
 
 describe("AI answer validation", () => {
   it("keeps only known product ids and removes duplicates", () => {
@@ -56,5 +56,24 @@ describe("AI answer validation", () => {
         new Set(["mirin"]),
       ),
     ).toEqual([{ productId: "mirin", suggestion: "цукор + рисовий оцет" }]);
+  });
+
+  it("reads the shape of a week draft and drops malformed entries", () => {
+    const draft = readWeekDraft({
+      entries: [
+        { recipeId: "soup", servings: 4, slots: [{ date: "2026-11-02", meal: "dinner" }, { date: "2026-11-03", meal: "brunch" }] },
+        { frameworkId: "bowl", choices: { base: "rice", sauce: 3 }, slots: [{ date: "2026-11-04", meal: "lunch" }] },
+        { text: " Яблуко ", servings: 1, slots: [{ date: "2026-11-04", meal: "snack" }] },
+        { recipeId: "stew", slots: [] },
+        { servings: 2, slots: [{ date: "2026-11-05", meal: "dinner" }] },
+      ],
+    });
+
+    expect(draft).toEqual([
+      { dish: { kind: "recipe", recipeId: "soup" }, servings: 4, slots: [{ date: "2026-11-02", meal: "dinner" }] },
+      { dish: { kind: "framework", frameworkId: "bowl", choices: { base: "rice" } }, servings: 0, slots: [{ date: "2026-11-04", meal: "lunch" }] },
+      { dish: { kind: "text", text: "Яблуко" }, servings: 1, slots: [{ date: "2026-11-04", meal: "snack" }] },
+    ]);
+    expect(() => readWeekDraft({ plan: [] })).toThrow();
   });
 });

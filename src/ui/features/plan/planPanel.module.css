@@ -121,6 +121,12 @@
   cursor: pointer;
 }
 
+.cell:disabled {
+  cursor: default;
+  background: var(--color-chip);
+  border-style: dashed;
+}
+
 .cell[aria-pressed="true"] {
   background: var(--color-accent);
   border-color: var(--color-accent);

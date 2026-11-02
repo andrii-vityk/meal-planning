@@ -1,22 +1,41 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import type { WeekDraftOptions } from "@/application/weekDraft";
+import { draftWeek, saveDraft } from "@/application/weekDraft";
 import type { IsoDate } from "@/domain/calendar";
 import { startOfWeek, weekDates } from "@/domain/calendar";
 import { nutritionCoverage } from "@/domain/nutritionCoverage";
-import type { Meal, MealSlot } from "@/domain/plan";
+import type { Meal, MealSlot, PlanEntry } from "@/domain/plan";
 import { meals } from "@/domain/plan";
 import { nutrients } from "@/domain/product";
+import type { DraftEntry } from "@/domain/weekDraft";
+import { compareEntries, isIdea } from "@/domain/weekDraft";
 import { weekPlan } from "@/domain/weekPlanning";
+import { aiErrorMessage, isCancellation } from "@/ui/aiErrors";
 import { WeekSwitcher } from "@/ui/components/WeekSwitcher";
 import { formatDayMonth, formatWeekday, todayIso } from "@/ui/dates";
 import { useDependencies } from "@/ui/dependencies";
 import { dishTitle } from "@/ui/dishTitle";
+import { useBackClosable } from "@/ui/hooks/useBackClosable";
 import { useCollection } from "@/ui/hooks/useCollection";
 import { strings } from "@/ui/strings/uk";
-import { useBackClosable } from "@/ui/hooks/useBackClosable";
+import { DraftSheet } from "./DraftSheet";
 import { PlanEntryPanel } from "./PlanEntryPanel";
 import styles from "./plan.module.css";
 
-type Editor = { readonly entryId: string } | { readonly slot: MealSlot };
+/** What is open over the plan. */
+type Layer =
+  | { readonly kind: "entry"; readonly entryId: string }
+  | { readonly kind: "cell"; readonly slot: MealSlot }
+  | { readonly kind: "draft" };
+
+/** A draft lives only here, in memory, until it is accepted. */
+interface Draft {
+  readonly options: WeekDraftOptions;
+  readonly entries: readonly DraftEntry[];
+}
+
+const occurs = (slots: readonly MealSlot[], date: IsoDate, meal: Meal) =>
+  slots.findIndex((slot) => slot.date === date && slot.meal === meal);
 
 export function PlanView() {
   const dependencies = useDependencies();
@@ -27,16 +46,91 @@ export function PlanView() {
 
   // A function initializer, so "today" is computed once, not on every render.
   const [weekStart, setWeekStart] = useState<IsoDate>(() => startOfWeek(todayIso()));
-  const [editor, openEditor, closeEditor] = useBackClosable<Editor>();
+  const [layer, openLayer, closeLayer] = useBackClosable<Layer>();
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [replacing, setReplacing] = useState<DraftEntry | null>(null);
+  const [isDrafting, startDraftWork] = useTransition();
+  const [isAccepting, startAccepting] = useTransition();
+  const isDraftBusy = isDrafting || isAccepting;
+  const controller = useRef<AbortController | null>(null);
+
+  useEffect(() => () => controller.current?.abort(), []);
 
   const plan = weekPlan(weekStart, entries.values());
-  const coverage = nutritionCoverage(plan, { products, recipes, frameworks });
+  const weekDraft = draft?.options.weekStart === weekStart ? draft : null;
+  const draftEntries = weekDraft?.entries ?? [];
 
-  const entriesAt = (date: IsoDate, meal: Meal) =>
-    plan.entries.flatMap((entry) => {
-      const index = entry.slots.findIndex((slot) => slot.date === date && slot.meal === meal);
-      return index === -1 ? [] : [{ entry, isLeftover: index > 0 }];
+  // Coverage previews the draft together with what is already planned.
+  const preview: PlanEntry[] = [
+    ...plan.entries,
+    ...draftEntries.map((entry, index) => ({ id: `draft-${index}`, ...entry })),
+  ];
+  const coverage = nutritionCoverage({ weekStart, entries: preview }, { products, recipes, frameworks });
+  const titleOf = (entry: { readonly dish: PlanEntry["dish"] }) => dishTitle(entry.dish, recipes, frameworks);
+
+  const runDraftWork = (work: (signal: AbortSignal) => Promise<void>) => {
+    setDraftError(null);
+    controller.current?.abort();
+    controller.current = new AbortController();
+    const { signal } = controller.current;
+    startDraftWork(async () => {
+      try {
+        await work(signal);
+      } catch (caught) {
+        if (!isCancellation(caught)) setDraftError(aiErrorMessage(caught));
+      }
     });
+  };
+
+  const replace = (entry: DraftEntry) => {
+    if (!weekDraft) return;
+    setReplacing(entry);
+    runDraftWork(async (signal) => {
+      try {
+        const options = { ...weekDraft.options, draft: weekDraft.entries, replacing: entry };
+        const alternatives = await draftWeek(dependencies, options, signal);
+        if (alternatives.length === 0) {
+          setDraftError(strings.draft.noAlternative);
+          return;
+        }
+        setDraft({
+          options: weekDraft.options,
+          entries: [...weekDraft.entries.filter((item) => item !== entry), ...alternatives].toSorted(compareEntries),
+        });
+      } finally {
+        setReplacing(null);
+      }
+    });
+  };
+
+  const regenerate = () => {
+    if (!weekDraft) return;
+    runDraftWork(async (signal) => {
+      const next = await draftWeek(dependencies, weekDraft.options, signal);
+      if (next.length === 0) setDraftError(strings.draft.empty);
+      else setDraft({ options: weekDraft.options, entries: next });
+    });
+  };
+
+  const accept = () => {
+    if (!weekDraft) return;
+    setDraftError(null);
+    startAccepting(async () => {
+      try {
+        await saveDraft(dependencies, weekStart, weekDraft.entries);
+        setDraft(null);
+      } catch {
+        setDraftError(strings.draft.acceptFailed);
+      }
+    });
+  };
+
+  const removeFromDraft = (entry: DraftEntry) => {
+    if (!weekDraft) return;
+    const rest = weekDraft.entries.filter((item) => item !== entry);
+    setDraft(rest.length > 0 ? { options: weekDraft.options, entries: rest } : null);
+  };
 
   return (
     <section className={styles.section} aria-labelledby="plan-heading">
@@ -44,18 +138,60 @@ export function PlanView() {
         <h2 id="plan-heading" className={styles.heading}>
           {strings.plan.heading}
         </h2>
-        <WeekSwitcher
-          weekStart={weekStart}
-          onChange={setWeekStart}
-        />
+        <WeekSwitcher weekStart={weekStart} onChange={setWeekStart} />
       </div>
 
-      {editor && (
-        <PlanEntryPanel
+      {weekDraft ? (
+        <div className={styles.draftBar} role="region" aria-label={strings.draft.heading}>
+          <p className={styles.draftSummary}>{strings.draft.summary(weekDraft.entries.length)}</p>
+          <div className={styles.actions}>
+            <button type="button" className="button" onClick={accept} disabled={isDraftBusy}>
+              {isAccepting ? strings.common.saving : strings.draft.accept}
+            </button>
+            <button type="button" className="button button-secondary" onClick={regenerate} disabled={isDraftBusy}>
+              {strings.draft.regenerate}
+            </button>
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => {
+                controller.current?.abort();
+                setDraft(null);
+                setDraftError(null);
+              }}
+            >
+              {strings.draft.discard}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <button type="button" className="button" onClick={() => openLayer({ kind: "draft" })}>
+            {strings.draft.open}
+          </button>
+        </div>
+      )}
+      {draftError && (
+        <p className="error" role="alert">
+          {draftError}
+        </p>
+      )}
+
+      {layer?.kind === "entry" && (
+        <PlanEntryPanel weekStart={weekStart} entryId={layer.entryId} onClose={closeLayer} onSaved={closeLayer} />
+      )}
+      {layer?.kind === "cell" && (
+        <PlanEntryPanel weekStart={weekStart} initialSlot={layer.slot} onClose={closeLayer} onSaved={closeLayer} />
+      )}
+      {layer?.kind === "draft" && (
+        <DraftSheet
           weekStart={weekStart}
-          {...("entryId" in editor ? { entryId: editor.entryId } : { initialSlot: editor.slot })}
-          onClose={closeEditor}
-          onSaved={closeEditor}
+          occupied={plan.entries.flatMap((entry) => entry.slots)}
+          onClose={closeLayer}
+          onDrafted={(drafted, options) => {
+            setDraft({ options, entries: drafted });
+            closeLayer();
+          }}
         />
       )}
 
@@ -87,26 +223,67 @@ export function PlanView() {
                 <div key={meal} className={styles.meal}>
                   <dt className={styles.mealName}>{strings.meals[meal]}</dt>
                   <dd className={styles.mealEntries}>
-                    {entriesAt(date, meal).map(({ entry, isLeftover }) => {
-                      const title = dishTitle(entry.dish, recipes, frameworks);
+                    {plan.entries.map((entry) => {
+                      const index = occurs(entry.slots, date, meal);
+                      if (index === -1) return null;
+                      const title = titleOf(entry);
                       return (
                         <button
                           key={entry.id}
                           type="button"
                           className={styles.entry}
                           aria-label={strings.plan.editEntry(title)}
-                          onClick={() => openEditor({ entryId: entry.id })}
+                          onClick={() => openLayer({ kind: "entry", entryId: entry.id })}
                         >
                           {title}
-                          {isLeftover && <span className={styles.leftover}> · {strings.plan.leftovers}</span>}
+                          {index > 0 && <span className={styles.leftover}> · {strings.plan.leftovers}</span>}
                         </button>
+                      );
+                    })}
+                    {draftEntries.map((entry, entryIndex) => {
+                      const index = occurs(entry.slots, date, meal);
+                      if (index === -1) return null;
+                      const title = titleOf(entry);
+                      const isBusy = replacing === entry;
+                      return (
+                        <span key={`draft-${entryIndex}`} className={styles.draftEntry}>
+                          <span>
+                            {title}
+                            <span className={styles.leftover}>
+                              {" "}
+                              · {index > 0 ? strings.plan.leftovers : isIdea(entry) ? strings.draft.idea : strings.draft.label}
+                            </span>
+                          </span>
+                          {index === 0 && (
+                            <>
+                              <button
+                                type="button"
+                                className={styles.draftAction}
+                                aria-label={strings.draft.replace(title)}
+                                disabled={isDraftBusy}
+                                onClick={() => replace(entry)}
+                              >
+                                {isBusy ? "…" : "↻"}
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.draftAction}
+                                aria-label={strings.draft.remove(title)}
+                                disabled={isDraftBusy}
+                                onClick={() => removeFromDraft(entry)}
+                              >
+                                ×
+                              </button>
+                            </>
+                          )}
+                        </span>
                       );
                     })}
                     <button
                       type="button"
                       className={styles.add}
                       aria-label={strings.plan.add(strings.meals[meal], formatWeekday(date))}
-                      onClick={() => openEditor({ slot: { date, meal } })}
+                      onClick={() => openLayer({ kind: "cell", slot: { date, meal } })}
                     >
                       +
                     </button>
