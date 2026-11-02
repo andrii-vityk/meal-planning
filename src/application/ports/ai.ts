@@ -1,4 +1,7 @@
+import type { IsoDate } from "@/domain/calendar";
+import type { MealSlot } from "@/domain/plan";
 import type { NutritionFlags, Product, ProductCategory } from "@/domain/product";
+import type { DraftEntry } from "@/domain/weekDraft";
 import type { Quantity } from "@/domain/quantity";
 
 export type AiErrorCode =
@@ -62,6 +65,42 @@ export interface Substitution {
   readonly suggestion: string;
 }
 
+/** A saved dish as the model sees it when drafting a week. */
+export interface DraftRecipeOption {
+  readonly id: string;
+  readonly title: string;
+  readonly tags: readonly string[];
+  readonly servings: number;
+  readonly nutrition: NutritionFlags;
+}
+
+export interface DraftFrameworkOption {
+  readonly id: string;
+  readonly title: string;
+  readonly slots: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly required: boolean;
+    readonly options: readonly { readonly id: string; readonly name: string; readonly nutrition: NutritionFlags }[];
+  }[];
+}
+
+/** Everything the model needs to fill the open slots of one week. */
+export interface WeekDraftRequest {
+  readonly weekStart: IsoDate;
+  /** Slots to fill; nothing else may be planned. */
+  readonly open: readonly MealSlot[];
+  /** Dishes already in the week, for variety and nutrition. */
+  readonly planned: readonly { readonly title: string; readonly slots: readonly MealSlot[] }[];
+  readonly recipes: readonly DraftRecipeOption[];
+  readonly frameworks: readonly DraftFrameworkOption[];
+  readonly avoidRecipeIds: readonly string[];
+  /** Titles of dishes the user asked to replace. */
+  readonly avoidTitles: readonly string[];
+  readonly maxIdeas: number;
+  readonly wishes: string;
+}
+
 /**
  * Everything the app asks an AI to do. Each call may be slow (seconds)
  * and may fail with an AiError; all of them accept an AbortSignal.
@@ -75,4 +114,6 @@ export interface AiService {
     available: readonly Product[],
     signal?: AbortSignal,
   ): Promise<readonly Substitution[]>;
+  /** A proposal only: the caller checks it against the draft rules before showing it. */
+  draftWeek(request: WeekDraftRequest, signal?: AbortSignal): Promise<readonly DraftEntry[]>;
 }

@@ -1,4 +1,14 @@
-import type { AiService, ProductClassification, ProductMatch, RecipeDraft, RecipeSource, Substitution } from "@/application/ports/ai";
+import type {
+  AiService,
+  ProductClassification,
+  ProductMatch,
+  RecipeDraft,
+  RecipeSource,
+  Substitution,
+  WeekDraftRequest,
+} from "@/application/ports/ai";
+import type { Dish } from "@/domain/plan";
+import type { DraftEntry } from "@/domain/weekDraft";
 import type { Product } from "@/domain/product";
 
 const normalize = (text: string) => text.toLowerCase().replaceAll("ё", "е").replaceAll("ʼ", "'");
@@ -36,5 +46,30 @@ export class LocalAi implements AiService {
 
   suggestSubstitutions(): Promise<readonly Substitution[]> {
     return Promise.resolve([]);
+  }
+
+  /**
+   * Fills each open slot in turn: snacks with fruit, other meals with the
+   * next allowed recipe or framework, round-robin. No leftovers, no ideas.
+   */
+  draftWeek(request: WeekDraftRequest): Promise<readonly DraftEntry[]> {
+    const avoid = new Set(request.avoidRecipeIds);
+    const recipes: Dish[] = request.recipes
+      .filter((recipe) => !avoid.has(recipe.id))
+      .map((recipe) => ({ kind: "recipe", recipeId: recipe.id }));
+    const frameworks: Dish[] = request.frameworks.map((framework) => ({
+      kind: "framework",
+      frameworkId: framework.id,
+      choices: {},
+    }));
+    let frameworkTurn = 0;
+
+    const entries = request.open.flatMap((slot): DraftEntry[] => {
+      if (slot.meal === "snack") return [{ dish: { kind: "text", text: "Фрукти" }, servings: 1, slots: [slot] }];
+      // Each recipe once, then frameworks in turn.
+      const dish = recipes.shift() ?? frameworks[frameworkTurn++ % Math.max(1, frameworks.length)];
+      return dish ? [{ dish, servings: 2, slots: [slot] }] : [];
+    });
+    return Promise.resolve(entries);
   }
 }

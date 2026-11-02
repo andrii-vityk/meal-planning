@@ -5,7 +5,11 @@
  */
 import type { IngredientDraft, ProductClassification, ProductMatch, RecipeDraft, Substitution } from "@/application/ports/ai";
 import { AiError } from "@/application/ports/ai";
+import { isIsoDate } from "@/domain/calendar";
+import type { Dish, MealSlot } from "@/domain/plan";
+import { meals } from "@/domain/plan";
 import { productCategories } from "@/domain/product";
+import type { DraftEntry } from "@/domain/weekDraft";
 import { isNonEmptyString, isPositiveNumber, isRecord, oneOf, parseArray, stringArray } from "@/infrastructure/serialization/guards";
 import { parseQuantity } from "@/infrastructure/serialization/entities";
 
@@ -61,4 +65,35 @@ export function readSubstitutions(answer: unknown, missingIds: ReadonlySet<strin
       ? { productId: item.productId, suggestion: item.suggestion.trim() }
       : null,
   );
+}
+
+function readSlot(value: unknown): MealSlot | null {
+  if (!isRecord(value) || !isNonEmptyString(value.date) || !isIsoDate(value.date) || !oneOf(meals, value.meal)) return null;
+  return { date: value.date, meal: value.meal };
+}
+
+function readChoices(value: unknown): Record<string, string> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter((pair): pair is [string, string] => isNonEmptyString(pair[1])));
+}
+
+function readDraftDish(value: Record<string, unknown>): Dish | null {
+  if (isNonEmptyString(value.recipeId)) return { kind: "recipe", recipeId: value.recipeId };
+  if (isNonEmptyString(value.frameworkId)) {
+    return { kind: "framework", frameworkId: value.frameworkId, choices: readChoices(value.choices) };
+  }
+  if (isNonEmptyString(value.text)) return { kind: "text", text: value.text.trim() };
+  return null;
+}
+
+/** The shape only; whether the dishes and slots are allowed is decided by the draft rules. */
+export function readWeekDraft(answer: unknown): DraftEntry[] {
+  if (!isRecord(answer) || !Array.isArray(answer.entries)) throw invalid("week draft");
+  return parseArray(answer.entries, (item) => {
+    if (!isRecord(item)) return null;
+    const dish = readDraftDish(item);
+    const slots = parseArray(item.slots, readSlot);
+    if (!dish || slots.length === 0) return null;
+    return { dish, servings: isPositiveNumber(item.servings) ? item.servings : 0, slots };
+  });
 }

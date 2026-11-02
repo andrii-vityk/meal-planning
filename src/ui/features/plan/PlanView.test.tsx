@@ -83,4 +83,49 @@ describe("PlanView", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getByRole("heading", { level: 2, name: strings.plan.heading })).toBeInTheDocument();
   });
+
+  it("drafts the week with AI, replaces one dish and saves the draft", async () => {
+    const { dependencies } = renderApp("plan", { withSampleData: true });
+
+    fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: strings.draft.generate }));
+
+    const bar = await screen.findByRole("region", { name: strings.draft.heading });
+    expect(bar).toHaveTextContent(strings.draft.summary(28));
+    expect(dependencies.planEntries.getSnapshot().items.size).toBe(0);
+
+    fireEvent.click(screen.getByRole("button", { name: strings.draft.replace("Курка теріякі з рисом") }));
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: strings.draft.replace("Курка теріякі з рисом") })).not.toBeInTheDocument(),
+    );
+
+    // The replacement request finishes after the new dish appears.
+    const accept = screen.getByRole("button", { name: strings.draft.accept });
+    await waitFor(() => expect(accept).toBeEnabled());
+    fireEvent.click(accept);
+
+    await waitFor(() => expect(dependencies.planEntries.getSnapshot().items.size).toBe(28));
+    expect(screen.queryByRole("region", { name: strings.draft.heading })).not.toBeInTheDocument();
+    const dishes = [...dependencies.planEntries.getSnapshot().items.values()].map((entry) => entry.dish.kind);
+    expect(dishes).not.toContain("recipe");
+  });
+
+  it("leaves planned meals alone when drafting", async () => {
+    const { dependencies } = renderApp("plan", { withSampleData: true });
+    await dependencies.planEntries.save({
+      id: "fixed",
+      weekStart: "2026-11-02",
+      dish: { kind: "text", text: "Гості" },
+      servings: 4,
+      slots: [{ date: "2026-11-07", meal: "dinner" }],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
+    const sheet = screen.getByRole("dialog");
+    expect(within(sheet).getByRole("button", { name: strings.plan.cell("субота", strings.meals.dinner) })).toBeDisabled();
+    fireEvent.click(within(sheet).getByRole("button", { name: strings.plan.cell("неділя", strings.meals.dinner) }));
+    fireEvent.click(within(sheet).getByRole("button", { name: strings.draft.generate }));
+
+    expect(await screen.findByRole("region", { name: strings.draft.heading })).toHaveTextContent(strings.draft.summary(26));
+  });
 });
