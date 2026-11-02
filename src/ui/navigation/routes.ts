@@ -7,49 +7,46 @@
  * Parsing and formatting are pure functions, tested without a browser.
  */
 
-export const sections = ["plan", "cook", "shopping", "recipes", "pantry"] as const;
+export const sections = ["plan", "cook", "shopping", "dishes", "products", "backup"] as const;
 export type Section = (typeof sections)[number];
 
-export const pantryTabs = ["products", "frameworks", "data"] as const;
-export type PantryTab = (typeof pantryTabs)[number];
+/** Sections in the main navigation; the rest are reached from elsewhere. */
+export const navigationSections = ["plan", "cook", "shopping", "dishes", "products"] as const satisfies readonly Section[];
 
-export type RecipeScreen =
+export type DishScreen =
   | { readonly kind: "list" }
-  | { readonly kind: "detail"; readonly recipeId: string }
-  | { readonly kind: "edit"; readonly recipeId: string }
-  | { readonly kind: "create" }
-  | { readonly kind: "import" };
-
-export type PantryScreen =
-  | { readonly kind: "tab"; readonly tab: PantryTab }
-  | { readonly kind: "frameworkEdit"; readonly frameworkId?: string };
+  | { readonly kind: "recipe"; readonly recipeId: string }
+  | { readonly kind: "recipeEdit"; readonly recipeId: string }
+  | { readonly kind: "recipeNew" }
+  | { readonly kind: "recipeImport" }
+  | { readonly kind: "framework"; readonly frameworkId: string }
+  | { readonly kind: "frameworkEdit"; readonly frameworkId: string }
+  | { readonly kind: "frameworkNew" };
 
 export type Route =
-  | { readonly section: "plan" }
-  | { readonly section: "cook" }
-  | { readonly section: "shopping" }
-  | { readonly section: "recipes"; readonly screen: RecipeScreen }
-  | { readonly section: "pantry"; readonly screen: PantryScreen };
+  | { readonly section: "plan" | "cook" | "shopping" | "products" | "backup" }
+  | { readonly section: "dishes"; readonly screen: DishScreen };
+
+export const dishRoute = (screen: DishScreen): Route => ({ section: "dishes", screen });
 
 /** The first screen of each section. */
 export function sectionRoot(section: Section): Route {
-  switch (section) {
-    case "plan":
-    case "cook":
-    case "shopping":
-      return { section };
-    case "recipes":
-      return { section, screen: { kind: "list" } };
-    case "pantry":
-      return { section, screen: { kind: "tab", tab: "products" } };
-  }
+  return section === "dishes" ? dishRoute({ kind: "list" }) : { section };
 }
 
 export const defaultRoute: Route = sectionRoot("plan");
 
-const recipeAddress = /^recipe-([A-Za-z0-9_-]+?)(-edit)?$/;
-const frameworkAddress = /^framework-([A-Za-z0-9_-]+?)-edit$/;
-const pantryTabAddress = /^pantry-(frameworks|data)$/;
+const id = "([A-Za-z0-9_-]+?)";
+const recipeAddress = new RegExp(`^recipe-${id}(-edit)?$`);
+const frameworkAddress = new RegExp(`^framework-${id}(-edit)?$`);
+
+/** Addresses from earlier versions of the app, so saved links keep working. */
+const legacyAddresses: Readonly<Record<string, Route>> = {
+  recipes: dishRoute({ kind: "list" }),
+  pantry: { section: "products" },
+  "pantry-frameworks": dishRoute({ kind: "list" }),
+  "pantry-data": { section: "backup" },
+};
 
 function isSection(value: string): value is Section {
   return (sections as readonly string[]).includes(value);
@@ -60,57 +57,49 @@ export function parseRoute(hash: string): Route {
   const name = hash.startsWith("#") ? hash.slice(1) : hash;
 
   if (isSection(name)) return sectionRoot(name);
-  if (name === "recipe-new") return { section: "recipes", screen: { kind: "create" } };
-  if (name === "recipe-import") return { section: "recipes", screen: { kind: "import" } };
-  if (name === "framework-new") return { section: "pantry", screen: { kind: "frameworkEdit" } };
-
-  const tab = pantryTabAddress.exec(name)?.[1];
-  if (tab === "frameworks" || tab === "data") return { section: "pantry", screen: { kind: "tab", tab } };
+  const legacy = legacyAddresses[name];
+  if (legacy) return legacy;
+  if (name === "recipe-new") return dishRoute({ kind: "recipeNew" });
+  if (name === "recipe-import") return dishRoute({ kind: "recipeImport" });
+  if (name === "framework-new") return dishRoute({ kind: "frameworkNew" });
 
   const recipe = recipeAddress.exec(name);
   if (recipe?.[1]) {
     const recipeId = recipe[1];
-    return { section: "recipes", screen: recipe[2] ? { kind: "edit", recipeId } : { kind: "detail", recipeId } };
+    return dishRoute(recipe[2] ? { kind: "recipeEdit", recipeId } : { kind: "recipe", recipeId });
   }
 
-  const frameworkId = frameworkAddress.exec(name)?.[1];
-  if (frameworkId) return { section: "pantry", screen: { kind: "frameworkEdit", frameworkId } };
+  const framework = frameworkAddress.exec(name);
+  if (framework?.[1]) {
+    const frameworkId = framework[1];
+    return dishRoute(framework[2] ? { kind: "frameworkEdit", frameworkId } : { kind: "framework", frameworkId });
+  }
 
   return defaultRoute;
 }
 
-function formatRecipeScreen(screen: RecipeScreen): string {
+function formatDishScreen(screen: DishScreen): string {
   switch (screen.kind) {
     case "list":
-      return "recipes";
-    case "detail":
+      return "dishes";
+    case "recipe":
       return `recipe-${screen.recipeId}`;
-    case "edit":
+    case "recipeEdit":
       return `recipe-${screen.recipeId}-edit`;
-    case "create":
+    case "recipeNew":
       return "recipe-new";
-    case "import":
+    case "recipeImport":
       return "recipe-import";
+    case "framework":
+      return `framework-${screen.frameworkId}`;
+    case "frameworkEdit":
+      return `framework-${screen.frameworkId}-edit`;
+    case "frameworkNew":
+      return "framework-new";
   }
-}
-
-function formatPantryScreen(screen: PantryScreen): string {
-  if (screen.kind === "frameworkEdit") {
-    return screen.frameworkId ? `framework-${screen.frameworkId}-edit` : "framework-new";
-  }
-  return screen.tab === "products" ? "pantry" : `pantry-${screen.tab}`;
 }
 
 /** The inverse of parseRoute: `parseRoute(formatRoute(route))` equals `route`. */
 export function formatRoute(route: Route): string {
-  switch (route.section) {
-    case "plan":
-    case "cook":
-    case "shopping":
-      return route.section;
-    case "recipes":
-      return formatRecipeScreen(route.screen);
-    case "pantry":
-      return formatPantryScreen(route.screen);
-  }
+  return route.section === "dishes" ? formatDishScreen(route.screen) : route.section;
 }

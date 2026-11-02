@@ -1,43 +1,7 @@
-.view {
-  display: grid;
-  gap: 16px;
-}
-
-.tabs {
-  display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--color-line);
-}
-
-.tab {
-  font: inherit;
-  font-weight: 500;
-  color: var(--color-muted);
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 8px 12px;
-  margin-bottom: -1px;
-  cursor: pointer;
-}
-
-.tab[aria-selected="true"] {
-  color: var(--color-fg);
-  border-bottom-color: var(--color-accent);
-}
-
 .section {
   display: grid;
   gap: 14px;
   min-width: 0;
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 .heading {
@@ -137,55 +101,4 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-}
-
-.frameworkCard {
-  width: 100%;
-  display: grid;
-  gap: 6px;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  padding: 12px;
-  cursor: pointer;
-}
-
-.frameworkCard:hover {
-  border-color: var(--color-accent);
-}
-
-.slots {
-  display: grid;
-  gap: 2px;
-  font-size: 0.875rem;
-}
-
-.slotSummary {
-  overflow-wrap: anywhere;
-}
-
-.slotEditor {
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  padding: 10px;
-  margin: 0;
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-
-.slotHeader,
-.optionRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.slotHeader > :global(.input),
-.optionRow > :global(.input) {
-  flex: 1 1 180px;
 }

@@ -6,14 +6,16 @@ import { useCollection } from "@/ui/hooks/useCollection";
 import { strings } from "@/ui/strings/uk";
 import type { FrameworkFormState, OptionRow, SlotRow } from "./frameworkFormState";
 import { emptyOption, emptySlot, fromFrameworkFormState, toFrameworkFormState } from "./frameworkFormState";
-import styles from "./pantry.module.css";
+import styles from "./frameworks.module.css";
 
 interface FrameworkFormProps {
+  /** Edit this existing framework; without it the form creates a new one. */
   frameworkId?: string;
-  onDone: () => void;
+  onCancel: () => void;
+  onSaved: (frameworkId: string) => void;
 }
 
-export function FrameworkForm({ frameworkId, onDone }: FrameworkFormProps) {
+export function FrameworkForm({ frameworkId, onCancel, onSaved }: FrameworkFormProps) {
   const dependencies = useDependencies();
   const products = useCollection(dependencies.products).items;
   const existing = useCollection(dependencies.frameworks).items.get(frameworkId ?? "");
@@ -24,7 +26,6 @@ export function FrameworkForm({ frameworkId, onDone }: FrameworkFormProps) {
   );
   const [titleError, setTitleError] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isSaving, startSaving] = useTransition();
 
   const updateSlot = (key: string, patch: Partial<SlotRow>) =>
@@ -55,17 +56,12 @@ export function FrameworkForm({ frameworkId, onDone }: FrameworkFormProps) {
     setFailed(false);
     startSaving(async () => {
       try {
-        await saveFramework(dependencies, result.input);
-        onDone();
+        const framework = await saveFramework(dependencies, result.input);
+        onSaved(framework.id);
       } catch {
         setFailed(true);
       }
     });
-  };
-
-  const remove = async () => {
-    if (frameworkId) await dependencies.frameworks.remove(frameworkId);
-    onDone();
   };
 
   return (
@@ -214,22 +210,9 @@ export function FrameworkForm({ frameworkId, onDone }: FrameworkFormProps) {
         <button type="submit" className="button" disabled={isSaving}>
           {isSaving ? strings.common.saving : strings.common.save}
         </button>
-        <button type="button" className="button button-secondary" onClick={onDone} disabled={isSaving}>
+        <button type="button" className="button button-secondary" onClick={onCancel} disabled={isSaving}>
           {strings.common.cancel}
         </button>
-        {frameworkId &&
-          (confirmingDelete ? (
-            <>
-              <span className="hint">{strings.frameworks.deleteQuestion}</span>
-              <button type="button" className="button button-danger" onClick={() => void remove()}>
-                {strings.common.confirmDelete}
-              </button>
-            </>
-          ) : (
-            <button type="button" className="button button-danger" onClick={() => setConfirmingDelete(true)}>
-              {strings.common.delete}
-            </button>
-          ))}
       </div>
     </form>
   );

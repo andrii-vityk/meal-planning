@@ -6,7 +6,7 @@ import { useDependencies } from "@/ui/dependencies";
 import { useCollection } from "@/ui/hooks/useCollection";
 import { strings } from "@/ui/strings/uk";
 import { ProductRow } from "./ProductRow";
-import styles from "./pantry.module.css";
+import styles from "./products.module.css";
 
 function matches(product: Product, query: string): boolean {
   const needle = query.trim().toLocaleLowerCase("uk");
