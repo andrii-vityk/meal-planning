@@ -4,14 +4,20 @@
 import type { AppDependencies } from "@/application/dependencies";
 import { newId } from "@/application/ids";
 import type { IsoDate } from "@/domain/calendar";
+import type { ShoppingStatus } from "@/domain/weekPlanning";
 import { shoppingCheckId } from "@/domain/weekPlanning";
 
 type ShoppingDeps = Pick<AppDependencies, "shoppingChecks" | "shoppingItems">;
 
-/** Marks a generated shopping line as bought or not. "Not bought" is stored as no record at all. */
-export async function setBought(deps: ShoppingDeps, weekStart: IsoDate, productId: string, bought: boolean): Promise<void> {
+/** Marks a generated shopping line as bought or at home; null = still to buy, stored as no record at all. */
+export async function setShoppingStatus(
+  deps: ShoppingDeps,
+  weekStart: IsoDate,
+  productId: string,
+  status: ShoppingStatus | null,
+): Promise<void> {
   const id = shoppingCheckId(weekStart, productId);
-  if (bought) await deps.shoppingChecks.save({ id, weekStart, productId });
+  if (status) await deps.shoppingChecks.save({ id, weekStart, productId, status });
   else await deps.shoppingChecks.remove(id);
 }
 

@@ -39,6 +39,35 @@ describe("ShoppingView", () => {
     expect(screen.getByLabelText(strings.shopping.bought("Курка"))).toBeChecked();
   });
 
+  it("moves a line that is already at home out of the list and back", async () => {
+    const dependencies = createInMemoryDependencies({ withSampleData: true });
+    await dependencies.planEntries.save({
+      id: "e1",
+      weekStart: "2026-11-02",
+      dish: { kind: "recipe", recipeId: "teriyakiChicken" },
+      servings: 2,
+      slots: [{ date: "2026-11-02", meal: "dinner" }],
+    });
+    renderWithDependencies(<ShoppingView />, { dependencies });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: strings.shopping.markAtHome("Курка") }));
+      await Promise.resolve();
+    });
+
+    expect(dependencies.shoppingChecks.getSnapshot().items.get("2026-11-02~chicken")?.status).toBe("atHome");
+    expect(screen.queryByLabelText(strings.shopping.bought("Курка"))).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: strings.shopping.atHomeGroup })).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: strings.shopping.backToList("Курка") }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByLabelText(strings.shopping.bought("Курка"))).not.toBeChecked();
+    expect(dependencies.shoppingChecks.getSnapshot().items.size).toBe(0);
+  });
+
   it("adds items by hand", async () => {
     renderWithDependencies(<ShoppingView />);
 

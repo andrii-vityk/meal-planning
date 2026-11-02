@@ -6,6 +6,7 @@ import { isIsoDate } from "@/domain/calendar";
 import type { Dish, MealSlot } from "@/domain/plan";
 import { meals } from "@/domain/plan";
 import type { ManualShoppingItem, ShoppingCheck, WeekPlanEntry } from "@/domain/weekPlanning";
+import { shoppingStatuses } from "@/domain/weekPlanning";
 import type { Json } from "./guards";
 import { isNonEmptyString, isPositiveNumber, isRecord, isString, oneOf, parseArray } from "./guards";
 import { toDocument } from "./entities";
@@ -44,7 +45,9 @@ export function parseShoppingItem(id: string, raw: unknown): ManualShoppingItem 
 
 export function parseShoppingCheck(id: string, raw: unknown): ShoppingCheck | null {
   if (!isRecord(raw) || !isDate(raw.weekStart) || !isNonEmptyString(raw.productId)) return null;
-  return { id, weekStart: raw.weekStart, productId: raw.productId };
+  // Records written before the status existed meant "bought".
+  const status = oneOf(shoppingStatuses, raw.status) ? raw.status : "bought";
+  return { id, weekStart: raw.weekStart, productId: raw.productId, status };
 }
 
 export const serializeWeekRecord = (record: { readonly id: string }): Json => toDocument(record);
