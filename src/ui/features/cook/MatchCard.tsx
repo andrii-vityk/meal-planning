@@ -11,9 +11,10 @@ import styles from "./cook.module.css";
 interface MatchCardProps {
   match: DishMatch;
   available: readonly Product[];
+  onAddToPlan: () => void;
 }
 
-export function MatchCard({ match, available }: MatchCardProps) {
+export function MatchCard({ match, available, onAddToPlan }: MatchCardProps) {
   const { ai, products } = useDependencies();
   const productItems = useCollection(products).items;
   const [substitutions, setSubstitutions] = useState<readonly Substitution[] | null>(null);
@@ -84,13 +85,16 @@ export function MatchCard({ match, available }: MatchCardProps) {
         </>
       )}
 
-      {missingProducts.length > 0 && substitutions === null && (
-        <div>
+      <div className={styles.cardActions}>
+        <button type="button" className="button" onClick={onAddToPlan}>
+          {strings.plan.addToPlan}
+        </button>
+        {missingProducts.length > 0 && substitutions === null && (
           <button type="button" className="button button-secondary" onClick={suggest} disabled={isSuggesting}>
             {isSuggesting ? strings.cook.suggesting : strings.cook.suggest}
           </button>
-        </div>
-      )}
+        )}
+      </div>
       {substitutions !== null &&
         (substitutions.length === 0 ? (
           <p className="hint">{strings.cook.noSubstitutions}</p>

@@ -11,9 +11,10 @@ interface RecipeDetailProps {
   recipeId: string;
   onBack: () => void;
   onEdit: () => void;
+  onAddToPlan: () => void;
 }
 
-export function RecipeDetail({ recipeId, onBack, onEdit }: RecipeDetailProps) {
+export function RecipeDetail({ recipeId, onBack, onEdit, onAddToPlan }: RecipeDetailProps) {
   const { recipes, products } = useDependencies();
   const recipe = useCollection(recipes).items.get(recipeId);
   const productItems = useCollection(products).items;
@@ -131,6 +132,9 @@ export function RecipeDetail({ recipeId, onBack, onEdit }: RecipeDetailProps) {
       )}
 
       <div className={styles.actions}>
+        <button type="button" className="button" onClick={onAddToPlan}>
+          {strings.plan.addToPlan}
+        </button>
         <button type="button" className="button button-secondary" onClick={onEdit}>
           {strings.common.edit}
         </button>

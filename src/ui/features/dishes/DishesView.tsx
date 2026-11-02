@@ -1,13 +1,21 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import type { RecipeInput } from "@/application/recipes";
+import { startOfWeek } from "@/domain/calendar";
+import type { Dish } from "@/domain/plan";
+import { todayIso } from "@/ui/dates";
+import { useDependencies } from "@/ui/dependencies";
 import { FrameworkDetail } from "@/ui/features/frameworks/FrameworkDetail";
 import { FrameworkForm } from "@/ui/features/frameworks/FrameworkForm";
+import { defaultChoices, PlanEntryPanel } from "@/ui/features/plan/PlanEntryPanel";
 import { RecipeDetail } from "@/ui/features/recipes/RecipeDetail";
 import { RecipeForm } from "@/ui/features/recipes/RecipeForm";
 import { RecipeImport } from "@/ui/features/recipes/RecipeImport";
+import { useBackClosable } from "@/ui/hooks/useBackClosable";
 import { goBack, navigate } from "@/ui/navigation/router";
 import type { DishScreen } from "@/ui/navigation/routes";
-import { dishRoute } from "@/ui/navigation/routes";
+import { dishRoute, formatRoute } from "@/ui/navigation/routes";
+import { strings } from "@/ui/strings/uk";
 import { DishList } from "./DishList";
 
 const list = dishRoute({ kind: "list" });
@@ -20,8 +28,49 @@ const framework = (frameworkId: string) => dishRoute({ kind: "framework", framew
  * address stays in state here: the AI draft handed from import to the form.
  */
 export function DishesView({ screen }: { screen: DishScreen }) {
+  const { frameworks } = useDependencies();
   const [draft, setDraft] = useState<RecipeInput | undefined>(undefined);
+  const [planned, openPlanPanel, closePlanPanel] = useBackClosable<Dish>();
+  // A confirmation belongs to the screen it was shown on.
+  const [notice, setNotice] = useState<{ readonly address: string; readonly text: string } | null>(null);
+  const address = formatRoute(dishRoute(screen));
 
+  return (
+    <>
+      {notice?.address === address && (
+        <p className="notice" role="status">
+          {notice.text}
+        </p>
+      )}
+      {screenContent(screen, {
+        draft,
+        setDraft,
+        addToPlan: (dish) => openPlanPanel(dish),
+        frameworkChoices: (frameworkId) => defaultChoices(frameworks.getSnapshot().items.get(frameworkId)),
+      })}
+      {planned && (
+        <PlanEntryPanel
+          weekStart={startOfWeek(todayIso())}
+          initialDish={planned}
+          onClose={closePlanPanel}
+          onSaved={({ title }) => {
+            setNotice({ address, text: strings.plan.saved(title) });
+            closePlanPanel();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+interface ScreenTools {
+  readonly draft: RecipeInput | undefined;
+  readonly setDraft: (draft: RecipeInput | undefined) => void;
+  readonly addToPlan: (dish: Dish) => void;
+  readonly frameworkChoices: (frameworkId: string) => Record<string, string>;
+}
+
+function screenContent(screen: DishScreen, { draft, setDraft, addToPlan, frameworkChoices }: ScreenTools): ReactNode {
   switch (screen.kind) {
     case "list":
       return (
@@ -42,6 +91,7 @@ export function DishesView({ screen }: { screen: DishScreen }) {
           recipeId={screen.recipeId}
           onBack={() => goBack(list)}
           onEdit={() => navigate(dishRoute({ kind: "recipeEdit", recipeId: screen.recipeId }))}
+          onAddToPlan={() => addToPlan({ kind: "recipe", recipeId: screen.recipeId })}
         />
       );
     case "recipeNew":
@@ -80,6 +130,13 @@ export function DishesView({ screen }: { screen: DishScreen }) {
           frameworkId={screen.frameworkId}
           onBack={() => goBack(list)}
           onEdit={() => navigate(dishRoute({ kind: "frameworkEdit", frameworkId: screen.frameworkId }))}
+          onAddToPlan={() =>
+            addToPlan({
+              kind: "framework",
+              frameworkId: screen.frameworkId,
+              choices: frameworkChoices(screen.frameworkId),
+            })
+          }
         />
       );
     case "frameworkNew":

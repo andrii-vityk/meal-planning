@@ -1,7 +1,8 @@
-import { fireEvent, screen } from "@testing-library/react";
-import { renderWithDependencies } from "@/test/renderWithDependencies";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { renderApp } from "@/test/renderApp";
 import { strings } from "@/ui/strings/uk";
-import { PlanView } from "./PlanView";
+
+const cell = (day: string, meal: string) => strings.plan.cell(day, meal);
 
 describe("PlanView", () => {
   beforeEach(() => {
@@ -14,15 +15,22 @@ describe("PlanView", () => {
     vi.useRealTimers();
   });
 
-  it("adds a dish with leftovers and shows nutrition coverage on both days", () => {
-    const { dependencies } = renderWithDependencies(<PlanView />, { withSampleData: true });
+  it("adds a dish with leftovers and shows nutrition coverage on both days", async () => {
+    const { dependencies } = renderApp("plan", { withSampleData: true });
 
     fireEvent.click(screen.getByRole("button", { name: strings.plan.add(strings.meals.dinner, "понеділок") }));
-    fireEvent.change(screen.getByLabelText(strings.plan.slotDay), { target: { value: "2026-11-03" } });
-    fireEvent.change(screen.getByLabelText(strings.plan.slotMeal), { target: { value: "lunch" } });
-    fireEvent.click(screen.getByRole("button", { name: strings.plan.addSlot }));
-    fireEvent.click(screen.getByRole("button", { name: strings.common.save }));
+    const panel = screen.getByRole("dialog", { name: strings.plan.newEntry });
+    expect(within(panel).getByRole("button", { name: cell("понеділок", strings.meals.dinner) })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
+    fireEvent.change(within(panel).getByLabelText(strings.plan.dishSearch), { target: { value: "теріякі" } });
+    fireEvent.click(within(panel).getByRole("button", { name: /Курка теріякі з рисом/ }));
+    fireEvent.click(within(panel).getByRole("button", { name: cell("вівторок", strings.meals.lunch) }));
+    fireEvent.click(within(panel).getByRole("button", { name: strings.common.save }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     const title = "Курка теріякі з рисом";
     expect(screen.getAllByRole("button", { name: strings.plan.editEntry(title) })).toHaveLength(2);
     expect(screen.getByText(`· ${strings.plan.leftovers}`, { exact: false })).toBeInTheDocument();
@@ -32,6 +40,7 @@ describe("PlanView", () => {
     expect(entry).toMatchObject({
       weekStart: "2026-11-02",
       dish: { kind: "recipe", recipeId: "teriyakiChicken" },
+      servings: 2,
       slots: [
         { date: "2026-11-02", meal: "dinner" },
         { date: "2026-11-03", meal: "lunch" },
@@ -39,12 +48,39 @@ describe("PlanView", () => {
     });
   });
 
+  it("plans a dish written in own words", async () => {
+    const { dependencies } = renderApp("plan");
+
+    fireEvent.click(screen.getByRole("button", { name: strings.plan.add(strings.meals.snack, "середа") }));
+    fireEvent.change(screen.getByLabelText(strings.plan.dishSearch), { target: { value: "Яблука й горіхи" } });
+    fireEvent.click(screen.getByRole("button", { name: strings.plan.asText("Яблука й горіхи") }));
+    fireEvent.click(screen.getByRole("button", { name: strings.common.save }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect([...dependencies.planEntries.getSnapshot().items.values()][0]?.dish).toEqual({
+      kind: "text",
+      text: "Яблука й горіхи",
+    });
+  });
+
   it("asks for a dish before saving", () => {
-    renderWithDependencies(<PlanView />);
+    renderApp("plan");
 
     fireEvent.click(screen.getByRole("button", { name: strings.plan.add(strings.meals.breakfast, "вівторок") }));
     fireEvent.click(screen.getByRole("button", { name: strings.common.save }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(strings.plan.invalid);
+  });
+
+  it("closes the panel with the browser Back button", async () => {
+    renderApp("plan");
+
+    fireEvent.click(screen.getByRole("button", { name: strings.plan.add(strings.meals.lunch, "четвер") }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    window.history.back();
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("heading", { level: 2, name: strings.plan.heading })).toBeInTheDocument();
   });
 });

@@ -1,8 +1,14 @@
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { addProduct } from "@/application/catalog";
+import { startOfWeek } from "@/domain/calendar";
+import type { DishMatch } from "@/domain/dishMatching";
 import { matchDishes } from "@/domain/dishMatching";
+import type { Dish } from "@/domain/plan";
 import { findProductByName } from "@/domain/product";
 import { aiErrorMessage, isCancellation } from "@/ui/aiErrors";
+import { todayIso } from "@/ui/dates";
+import { PlanEntryPanel } from "@/ui/features/plan/PlanEntryPanel";
+import { useBackClosable } from "@/ui/hooks/useBackClosable";
 import { useDependencies } from "@/ui/dependencies";
 import { useCollection } from "@/ui/hooks/useCollection";
 import { strings } from "@/ui/strings/uk";
@@ -10,6 +16,12 @@ import { MatchCard } from "./MatchCard";
 import styles from "./cook.module.css";
 
 const missingLimits = [0, 1, 2, 3] as const;
+
+/** A match as a plan dish: a framework keeps the options chosen for what is at home. */
+const dishOf = (match: DishMatch): Dish =>
+  match.kind === "recipe"
+    ? { kind: "recipe", recipeId: match.recipe.id }
+    : { kind: "framework", frameworkId: match.framework.id, choices: match.choices };
 
 export function CookView() {
   const dependencies = useDependencies();
@@ -27,6 +39,8 @@ export function CookView() {
   const [error, setError] = useState<string | null>(null);
   const [isRecognizing, startRecognizing] = useTransition();
   const controller = useRef<AbortController | null>(null);
+  const [planned, openPlanPanel, closePlanPanel] = useBackClosable<Dish>();
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => () => controller.current?.abort(), []);
 
@@ -202,6 +216,12 @@ export function CookView() {
         </label>
       </div>
 
+      {notice && (
+        <p className="notice" role="status">
+          {notice}
+        </p>
+      )}
+
       <section className={styles.block} aria-labelledby="cook-results">
         <h3 id="cook-results" className={styles.subheading}>
           {strings.cook.results}
@@ -217,11 +237,23 @@ export function CookView() {
                 key={match.kind === "recipe" ? `r-${match.recipe.id}` : `f-${match.framework.id}`}
                 match={match}
                 available={availableProducts}
+                onAddToPlan={() => openPlanPanel(dishOf(match))}
               />
             ))}
           </ul>
         )}
       </section>
+      {planned && (
+        <PlanEntryPanel
+          weekStart={startOfWeek(todayIso())}
+          initialDish={planned}
+          onClose={closePlanPanel}
+          onSaved={({ title }) => {
+            setNotice(strings.plan.saved(title));
+            closePlanPanel();
+          }}
+        />
+      )}
     </section>
   );
 }

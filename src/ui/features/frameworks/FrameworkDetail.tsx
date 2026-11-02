@@ -10,10 +10,11 @@ interface FrameworkDetailProps {
   frameworkId: string;
   onBack: () => void;
   onEdit: () => void;
+  onAddToPlan: () => void;
 }
 
 /** A framework to read before cooking or planning; editing is one step further. */
-export function FrameworkDetail({ frameworkId, onBack, onEdit }: FrameworkDetailProps) {
+export function FrameworkDetail({ frameworkId, onBack, onEdit, onAddToPlan }: FrameworkDetailProps) {
   const { frameworks, products } = useDependencies();
   const framework = useCollection(frameworks).items.get(frameworkId);
   const productItems = useCollection(products).items;
@@ -97,6 +98,9 @@ export function FrameworkDetail({ frameworkId, onBack, onEdit }: FrameworkDetail
       )}
 
       <div className={styles.actions}>
+        <button type="button" className="button" onClick={onAddToPlan}>
+          {strings.plan.addToPlan}
+        </button>
         <button type="button" className="button button-secondary" onClick={onEdit}>
           {strings.common.edit}
         </button>

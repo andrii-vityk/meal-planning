@@ -1,0 +1,58 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 0.45);
+}
+
+.panel {
+  position: relative;
+  width: min(100%, 560px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+}
+
+.panel:focus {
+  outline: none;
+}
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-muted);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+/* Phones: a sheet attached to the bottom edge, within thumb reach. */
+@media (max-width: 640px) {
+  .backdrop {
+    place-items: end stretch;
+    padding: 0;
+  }
+
+  .panel {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+}
