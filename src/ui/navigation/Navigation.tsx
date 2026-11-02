@@ -2,7 +2,7 @@ import type { MouseEvent } from "react";
 import { strings } from "@/ui/strings/uk";
 import { navigate } from "./router";
 import type { Route, Section } from "./routes";
-import { formatRoute, sectionRoot, sections } from "./routes";
+import { formatRoute, navigationSections, sectionRoot } from "./routes";
 import styles from "./Navigation.module.css";
 
 interface NavigationProps {
@@ -18,7 +18,7 @@ export function Navigation({ current, lastRoutes }: NavigationProps) {
   return (
     <nav aria-label={strings.navigation.label} className={styles.nav}>
       <ul className={styles.list}>
-        {sections.map((section) => {
+        {navigationSections.map((section) => {
           const target = section === current ? sectionRoot(section) : (lastRoutes[section] ?? sectionRoot(section));
           const open = (event: MouseEvent<HTMLAnchorElement>) => {
             event.preventDefault();

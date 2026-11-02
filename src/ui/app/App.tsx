@@ -1,13 +1,14 @@
 import { Activity, useState } from "react";
 import { CookView } from "@/ui/features/cook/CookView";
-import { PantryView } from "@/ui/features/pantry/PantryView";
+import { DataPanel } from "@/ui/features/data/DataPanel";
+import { DishesView } from "@/ui/features/dishes/DishesView";
 import { PlanView } from "@/ui/features/plan/PlanView";
-import { RecipesView } from "@/ui/features/recipes/RecipesView";
+import { ProductsPanel } from "@/ui/features/products/ProductsPanel";
 import { ShoppingView } from "@/ui/features/shopping/ShoppingView";
 import { Navigation } from "@/ui/navigation/Navigation";
-import { useRoute } from "@/ui/navigation/router";
+import { navigate, useRoute } from "@/ui/navigation/router";
 import type { Route, Section } from "@/ui/navigation/routes";
-import { sections } from "@/ui/navigation/routes";
+import { formatRoute, sectionRoot, sections } from "@/ui/navigation/routes";
 import { strings } from "@/ui/strings/uk";
 import styles from "./App.module.css";
 
@@ -19,12 +20,16 @@ function SectionContent({ route }: { route: Route }) {
       return <CookView />;
     case "shopping":
       return <ShoppingView />;
-    case "recipes":
-      return <RecipesView screen={route.screen} />;
-    case "pantry":
-      return <PantryView screen={route.screen} />;
+    case "dishes":
+      return <DishesView screen={route.screen} />;
+    case "products":
+      return <ProductsPanel />;
+    case "backup":
+      return <DataPanel />;
   }
 }
+
+const backupRoute = sectionRoot("backup");
 
 type LastRoutes = Readonly<Partial<Record<Section, Route>>>;
 
@@ -42,7 +47,20 @@ export function App() {
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
-        <h1 className={styles.title}>{strings.app.title}</h1>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>{strings.app.title}</h1>
+          <a
+            href={`#${formatRoute(backupRoute)}`}
+            className={styles.secondaryLink}
+            aria-current={route.section === "backup" ? "page" : undefined}
+            onClick={(event) => {
+              event.preventDefault();
+              navigate(backupRoute);
+            }}
+          >
+            {strings.navigation.backup}
+          </a>
+        </div>
         <Navigation current={route.section} lastRoutes={lastRoutes} />
       </header>
       <main className={styles.main}>

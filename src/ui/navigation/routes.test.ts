@@ -1,26 +1,22 @@
 import type { Route } from "./routes";
-import { defaultRoute, formatRoute, parseRoute } from "./routes";
+import { defaultRoute, dishRoute, formatRoute, parseRoute } from "./routes";
+
+const uuid = "3f2a9c1e-7b4d-4e8a-9c21-5d6e7f8a9b0c";
 
 const examples: readonly [string, Route][] = [
   ["plan", { section: "plan" }],
   ["cook", { section: "cook" }],
   ["shopping", { section: "shopping" }],
-  ["recipes", { section: "recipes", screen: { kind: "list" } }],
-  ["recipe-new", { section: "recipes", screen: { kind: "create" } }],
-  ["recipe-import", { section: "recipes", screen: { kind: "import" } }],
-  [
-    "recipe-3f2a9c1e-7b4d-4e8a-9c21-5d6e7f8a9b0c",
-    { section: "recipes", screen: { kind: "detail", recipeId: "3f2a9c1e-7b4d-4e8a-9c21-5d6e7f8a9b0c" } },
-  ],
-  [
-    "recipe-3f2a9c1e-7b4d-4e8a-9c21-5d6e7f8a9b0c-edit",
-    { section: "recipes", screen: { kind: "edit", recipeId: "3f2a9c1e-7b4d-4e8a-9c21-5d6e7f8a9b0c" } },
-  ],
-  ["pantry", { section: "pantry", screen: { kind: "tab", tab: "products" } }],
-  ["pantry-frameworks", { section: "pantry", screen: { kind: "tab", tab: "frameworks" } }],
-  ["pantry-data", { section: "pantry", screen: { kind: "tab", tab: "data" } }],
-  ["framework-new", { section: "pantry", screen: { kind: "frameworkEdit" } }],
-  ["framework-bowl-edit", { section: "pantry", screen: { kind: "frameworkEdit", frameworkId: "bowl" } }],
+  ["products", { section: "products" }],
+  ["backup", { section: "backup" }],
+  ["dishes", dishRoute({ kind: "list" })],
+  ["recipe-new", dishRoute({ kind: "recipeNew" })],
+  ["recipe-import", dishRoute({ kind: "recipeImport" })],
+  [`recipe-${uuid}`, dishRoute({ kind: "recipe", recipeId: uuid })],
+  [`recipe-${uuid}-edit`, dishRoute({ kind: "recipeEdit", recipeId: uuid })],
+  ["framework-new", dishRoute({ kind: "frameworkNew" })],
+  [`framework-${uuid}`, dishRoute({ kind: "framework", frameworkId: uuid })],
+  ["framework-bowl-edit", dishRoute({ kind: "frameworkEdit", frameworkId: "bowl" })],
 ];
 
 describe("routes", () => {
@@ -38,9 +34,13 @@ describe("routes", () => {
   });
 
   it("accepts ids written outside the app", () => {
-    expect(parseRoute("recipe-chicken_teriyaki")).toEqual({
-      section: "recipes",
-      screen: { kind: "detail", recipeId: "chicken_teriyaki" },
-    });
+    expect(parseRoute("recipe-chicken_teriyaki")).toEqual(dishRoute({ kind: "recipe", recipeId: "chicken_teriyaki" }));
+  });
+
+  it("keeps addresses of earlier versions working", () => {
+    expect(parseRoute("recipes")).toEqual(dishRoute({ kind: "list" }));
+    expect(parseRoute("pantry")).toEqual({ section: "products" });
+    expect(parseRoute("pantry-frameworks")).toEqual(dishRoute({ kind: "list" }));
+    expect(parseRoute("pantry-data")).toEqual({ section: "backup" });
   });
 });

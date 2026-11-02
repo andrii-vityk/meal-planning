@@ -20,6 +20,24 @@
   }
 }
 
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.secondaryLink {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.secondaryLink[aria-current="page"] {
+  color: var(--color-fg);
+  font-weight: 600;
+}
+
 .title {
   margin: 0;
   font-size: var(--text-xl);

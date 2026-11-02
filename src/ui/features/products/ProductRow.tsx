@@ -4,7 +4,7 @@ import type { Nutrient, Product } from "@/domain/product";
 import { nutrients, productCategories } from "@/domain/product";
 import { useDependencies } from "@/ui/dependencies";
 import { strings } from "@/ui/strings/uk";
-import styles from "./pantry.module.css";
+import styles from "./products.module.css";
 
 interface Draft {
   readonly name: string;

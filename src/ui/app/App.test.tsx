@@ -17,7 +17,7 @@ describe("App", () => {
     renderApp("recipe-new");
 
     expect(screen.getByRole("heading", { level: 2, name: strings.recipeForm.newHeading })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: strings.navigation.recipes })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: strings.navigation.dishes })).toHaveAttribute("aria-current", "page");
   });
 
   it("keeps typed text when switching sections", async () => {
@@ -33,21 +33,28 @@ describe("App", () => {
   });
 
   it("returns to the last screen of a section, and to its start on a second tap", async () => {
-    renderApp("recipes", { withSampleData: true });
+    renderApp("dishes", { withSampleData: true });
     fireEvent.click(screen.getByRole("button", { name: /Курка теріякі/ }));
     expect(await screen.findByRole("heading", { level: 2, name: /Курка теріякі/ })).toBeInTheDocument();
 
     openSection(strings.navigation.plan);
     await screen.findByRole("heading", { level: 2, name: strings.plan.heading });
-    openSection(strings.navigation.recipes);
+    openSection(strings.navigation.dishes);
     expect(await screen.findByRole("heading", { level: 2, name: /Курка теріякі/ })).toBeInTheDocument();
 
-    openSection(strings.navigation.recipes);
-    expect(await screen.findByRole("heading", { level: 2, name: strings.recipes.heading })).toBeInTheDocument();
+    openSection(strings.navigation.dishes);
+    expect(await screen.findByRole("heading", { level: 2, name: strings.dishes.heading })).toBeInTheDocument();
+  });
+
+  it("opens the backup screen from the header", async () => {
+    renderApp("");
+    fireEvent.click(screen.getByRole("link", { name: strings.navigation.backup }));
+
+    expect(await screen.findByRole("heading", { level: 2, name: strings.backup.heading })).toBeInTheDocument();
   });
 
   it("goes back through screens with the browser Back button", async () => {
-    renderApp("recipes", { withSampleData: true });
+    renderApp("dishes", { withSampleData: true });
     fireEvent.click(screen.getByRole("button", { name: /Курка теріякі/ }));
     await screen.findByRole("heading", { level: 2, name: /Курка теріякі/ });
     fireEvent.click(screen.getByRole("button", { name: strings.common.edit }));
@@ -56,6 +63,6 @@ describe("App", () => {
     window.history.back();
     expect(await screen.findByRole("heading", { level: 2, name: /Курка теріякі/ })).toBeInTheDocument();
     window.history.back();
-    expect(await screen.findByRole("heading", { level: 2, name: strings.recipes.heading })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 2, name: strings.dishes.heading })).toBeInTheDocument();
   });
 });
