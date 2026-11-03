@@ -20,11 +20,19 @@ export interface ManualShoppingItem {
   readonly checked: boolean;
 }
 
-/** A generated shopping line marked as bought. Absent = not bought. */
+/**
+ * What happened to a generated shopping line: bought, or not needed
+ * because it is already at home. No record = still to buy.
+ */
+export type ShoppingStatus = "bought" | "atHome";
+
+export const shoppingStatuses: readonly ShoppingStatus[] = ["bought", "atHome"];
+
 export interface ShoppingCheck {
   readonly id: string;
   readonly weekStart: IsoDate;
   readonly productId: string;
+  readonly status: ShoppingStatus;
 }
 
 export function shoppingCheckId(weekStart: IsoDate, productId: string): string {

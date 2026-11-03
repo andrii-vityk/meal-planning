@@ -1,5 +1,5 @@
 import type { WeekPlanEntry } from "@/domain/weekPlanning";
-import { parsePlanEntry, parseShoppingItem, serializeWeekRecord } from "./weekRecords";
+import { parsePlanEntry, parseShoppingCheck, parseShoppingItem, serializeWeekRecord } from "./weekRecords";
 
 describe("week record serialization", () => {
   it("round-trips a plan entry with a framework dish", () => {
@@ -22,6 +22,12 @@ describe("week record serialization", () => {
       parsePlanEntry("e1", { weekStart: "2026-11-02", servings: 2, dish: { kind: "text", text: "Піца" }, slots: [{ date: "2026-13-01", meal: "dinner" }] }),
     ).toBeNull();
     expect(parsePlanEntry("e1", { weekStart: "2026-11-02", servings: 2, dish: { kind: "recipe" }, slots: [{ date: "2026-11-02", meal: "dinner" }] })).toBeNull();
+  });
+
+  it("reads shopping line statuses, treating records without one as bought", () => {
+    expect(parseShoppingCheck("c1", { weekStart: "2026-11-02", productId: "rice", status: "atHome" })?.status).toBe("atHome");
+    expect(parseShoppingCheck("c2", { weekStart: "2026-11-02", productId: "rice" })?.status).toBe("bought");
+    expect(parseShoppingCheck("c3", { weekStart: "2026-11-02", productId: "rice", status: "lost" })?.status).toBe("bought");
   });
 
   it("reads manual shopping items", () => {

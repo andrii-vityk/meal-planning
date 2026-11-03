@@ -303,6 +303,12 @@ export const strings = {
     addPlaceholder: "Напр.: серветки",
     add: "Додати",
     bought: (name: string) => `Куплено: ${name}`,
+    atHome: "Є вдома",
+    markAtHome: (name: string) => `${name}: є вдома`,
+    atHomeGroup: "Є вдома, купувати не треба",
+    backToList: (name: string) => `Повернути «${name}» до списку`,
+    backToListShort: "Купити",
+    saveFailed: "Не вдалося зберегти зміну. Перевірте з'єднання й спробуйте ще раз.",
     stapleNote: "Базові запаси сюди не потрапляють.",
   },
 } as const;

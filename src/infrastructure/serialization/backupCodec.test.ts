@@ -20,7 +20,7 @@ describe("JsonBackupCodec", () => {
         },
       ],
       shoppingItems: [{ id: "m1", weekStart: "2026-11-02", text: "Серветки", checked: true }],
-      shoppingChecks: [{ id: "2026-11-02~rice", weekStart: "2026-11-02", productId: "rice" }],
+      shoppingChecks: [{ id: "2026-11-02~rice", weekStart: "2026-11-02", productId: "rice", status: "atHome" as const }],
     };
 
     expect(codec.decode(codec.encode(data))).toEqual(data);
