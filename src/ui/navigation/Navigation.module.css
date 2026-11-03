@@ -58,11 +58,12 @@
     min-height: 56px;
     padding: 6px 2px;
     border-radius: 0;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     line-height: 1.2;
     text-align: center;
     white-space: normal;
-    overflow-wrap: anywhere;
+    /* Labels wrap between words only: "Що / приготувати", never inside a word. */
+    overflow-wrap: normal;
   }
 
   .link[aria-current="page"] {
