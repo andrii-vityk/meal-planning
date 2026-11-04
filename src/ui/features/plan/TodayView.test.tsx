@@ -52,7 +52,8 @@ describe("today screen", () => {
     act(() => fireEvent.click(screen.getByRole("button", { name: strings.today.wholeWeek })));
 
     expect(window.location.hash).toBe("#week");
-    expect(screen.getByRole("heading", { level: 2, name: strings.plan.heading })).toBeInTheDocument();
+    // The hashchange event arrives asynchronously, as in a browser.
+    expect(await screen.findByRole("heading", { level: 2, name: strings.plan.heading })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: strings.today.backToToday }));
     await waitFor(() =>
