@@ -1,5 +1,7 @@
 import type {
   AiService,
+  DraftChange,
+  DraftChangeRequest,
   ProductClassification,
   ProductMatch,
   RecipeDraft,
@@ -71,5 +73,22 @@ export class LocalAi implements AiService {
       return dish ? [{ dish, servings: 2, slots: [slot] }] : [];
     });
     return Promise.resolve(entries);
+  }
+
+  /**
+   * Products and saved dishes whose name stem appears in the request are
+   * excluded; no specific entries, the whole request becomes the note.
+   */
+  async interpretDraftChange(request: DraftChangeRequest): Promise<DraftChange> {
+    const text = normalize(request.instruction);
+    const mentioned = (name: string) => text.includes(normalize(name).slice(0, Math.max(3, name.length - 2)));
+    const { productIds } = await this.matchProducts(request.instruction, request.products);
+    return {
+      excludeProductIds: productIds,
+      excludeRecipeIds: request.recipes.filter((recipe) => mentioned(recipe.title)).map((recipe) => recipe.id),
+      excludeFrameworkIds: request.frameworks.filter((framework) => mentioned(framework.title)).map((framework) => framework.id),
+      replaceEntries: [],
+      note: request.instruction.trim(),
+    };
   }
 }

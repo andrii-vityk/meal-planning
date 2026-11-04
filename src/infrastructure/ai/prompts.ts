@@ -3,7 +3,7 @@
  * exact shape, which the matching parser in responses.ts then checks.
  * The model sees no conversation history: everything it needs is here.
  */
-import type { WeekDraftRequest } from "@/application/ports/ai";
+import type { DraftChangeRequest, WeekDraftRequest } from "@/application/ports/ai";
 import { meals } from "@/domain/plan";
 import type { NutritionFlags, Product } from "@/domain/product";
 import { productCategories } from "@/domain/product";
@@ -97,4 +97,30 @@ export function weekDraftPrompt(request: WeekDraftRequest): string {
 Поверни ЛИШЕ JSON: {"entries":[{"recipeId":"<id>" | "frameworkId":"<id>","choices":{} | "text":"...","servings":<число>,"slots":[{"date":"YYYY-MM-DD","meal":"<прийом>"}]}]}
 
 Дані: ${JSON.stringify(data)}`;
+}
+
+export function draftChangePrompt(request: DraftChangeRequest): string {
+  const data = {
+    entries: request.entries.map((entry) => ({
+      i: entry.index,
+      t: entry.title,
+      slots: entry.slots,
+      recipeId: entry.recipeId,
+      frameworkId: entry.frameworkId,
+      ing: entry.ingredients,
+    })),
+    products: request.products.map((product) => ({ id: product.id, n: product.name, a: product.aliases })),
+    recipes: request.recipes.map((recipe) => ({ id: recipe.id, t: recipe.title })),
+    frameworks: request.frameworks.map((framework) => ({ id: framework.id, t: framework.title })),
+  };
+  return `Користувач переглядає чернетку плану харчування на тиждень і просить її змінити. Розбери прохання на дані; саму зміну зробить застосунок.
+- excludeProductIds: продукти з довідника "products", яких не має бути в жодній страві («без грибів» → id грибів і їх різновидів). Лише id з довідника.
+- excludeRecipeIds / excludeFrameworkIds: збережені страви, які не використовувати в цій чернетці взагалі («прибери боул», «не хочу борщ»). Лише id з "recipes" / "frameworks".
+- replaceEntries: номери i записів чернетки, які треба замінити, якщо прохання стосується конкретних записів («у середу замість риби…», «заміни перекус у п'ятницю»), а також страв, записаних текстом, яких стосується прохання.
+- note: решта прохання, яку треба врахувати, обираючи заміни («щось м'ясне»), або порожній рядок. Якщо продукту немає в довіднику, згадай його тут («без кінзи»).
+Поверни ЛИШЕ JSON: {"excludeProductIds":[],"excludeRecipeIds":[],"excludeFrameworkIds":[],"replaceEntries":[],"note":""}
+
+Дані: ${JSON.stringify(data)}
+
+Прохання: ${request.instruction}`;
 }

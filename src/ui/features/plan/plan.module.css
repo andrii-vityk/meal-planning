@@ -179,3 +179,19 @@
   color: var(--color-fg);
   background: var(--color-chip);
 }
+
+/* Put in by the last change request. */
+.draftChanged {
+  background: var(--color-chip);
+  border-style: solid;
+}
+
+.revise {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.revise > :global(.input) {
+  flex: 1 1 200px;
+}

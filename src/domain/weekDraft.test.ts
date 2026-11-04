@@ -1,14 +1,14 @@
 import type { Framework } from "./framework";
 import type { Recipe } from "./recipe";
 import type { DraftEntry, DraftRules } from "./weekDraft";
-import { acceptDraft, isIdea, openSlots, recentRecipeIds } from "./weekDraft";
+import { acceptDraft, applyExclusions, isIdea, noExclusions, openSlots, recentRecipeIds } from "./weekDraft";
 import type { WeekPlanEntry } from "./weekPlanning";
 
-const recipe = (id: string, servings = 4): Recipe => ({
+const recipe = (id: string, servings = 4, productIds: readonly string[] = []): Recipe => ({
   id,
   title: id,
   servings,
-  ingredients: [],
+  ingredients: productIds.map((productId) => ({ productId })),
   steps: [],
   tags: [],
   kidFriendly: false,
@@ -163,6 +163,61 @@ describe("acceptDraft", () => {
     expect(kept.map((entry) => [entry.dish.kind === "recipe" && entry.dish.recipeId, entry.servings])).toEqual([
       ["soup", 3],
       ["stew", 6],
+    ]);
+  });
+});
+
+describe("applyExclusions", () => {
+  const sources = {
+    recipes: new Map([
+      ["mushroomSoup", recipe("mushroomSoup", 4, ["mushrooms", "potato"])],
+      ["stew", recipe("stew", 6, ["beef"])],
+    ]),
+    frameworks: new Map([["bowl", bowl]]),
+  };
+  const at = (date: string) => [{ date, meal: "dinner" as const }];
+  const soup: DraftEntry = { dish: { kind: "recipe", recipeId: "mushroomSoup" }, servings: 4, slots: at("2026-11-02") };
+  const stew: DraftEntry = { dish: { kind: "recipe", recipeId: "stew" }, servings: 6, slots: at("2026-11-03") };
+  const riceBowl: DraftEntry = {
+    dish: { kind: "framework", frameworkId: "bowl", choices: { base: "rice", sauce: "tahini" } },
+    servings: 2,
+    slots: at("2026-11-04"),
+  };
+  const snack: DraftEntry = { dish: { kind: "text", text: "Apple" }, servings: 1, slots: [{ date: week, meal: "snack" }] };
+  const draft = [soup, stew, riceBowl, snack];
+
+  it("finds recipes that use an excluded product without asking the model", () => {
+    const result = applyExclusions(draft, { ...noExclusions, productIds: new Set(["mushrooms"]) }, sources);
+
+    expect(result.removed).toEqual([soup]);
+    expect(result.kept).toEqual([stew, riceBowl, snack]);
+    expect(result.adjusted).toEqual([]);
+  });
+
+  it("switches a framework to another option instead of removing it", () => {
+    const result = applyExclusions(draft, { ...noExclusions, productIds: new Set(["rice"]) }, sources);
+
+    expect(result.removed).toEqual([]);
+    expect(result.adjusted).toEqual([{ ...riceBowl, dish: { ...riceBowl.dish, choices: { base: "bulgur", sauce: "tahini" } } }]);
+  });
+
+  it("removes a framework when a required part has no allowed option left, or when it is excluded", () => {
+    expect(applyExclusions(draft, { ...noExclusions, productIds: new Set(["rice", "bulgur"]) }, sources).removed).toEqual([
+      riceBowl,
+    ]);
+    expect(applyExclusions(draft, { ...noExclusions, frameworkIds: new Set(["bowl"]) }, sources).removed).toEqual([riceBowl]);
+    expect(applyExclusions(draft, { ...noExclusions, recipeIds: new Set(["stew"]) }, sources).removed).toEqual([stew]);
+  });
+
+  it("keeps excluded dishes out of a new proposal too", () => {
+    const kept = acceptDraft([soup, stew, riceBowl], {
+      ...rules({ recipes: sources.recipes }),
+      exclusions: { ...noExclusions, productIds: new Set(["mushrooms", "rice"]) },
+    });
+
+    expect(kept.map((entry) => entry.dish)).toEqual([
+      stew.dish,
+      { kind: "framework", frameworkId: "bowl", choices: { base: "bulgur", sauce: "tahini" } },
     ]);
   });
 });

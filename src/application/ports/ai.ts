@@ -101,6 +101,40 @@ export interface WeekDraftRequest {
   readonly wishes: string;
 }
 
+/** A dish of the draft as the model sees it when reading a change request. */
+export interface DraftEntrySummary {
+  /** Position in the draft, used to refer back to it. */
+  readonly index: number;
+  readonly title: string;
+  readonly slots: readonly MealSlot[];
+  readonly recipeId?: string;
+  readonly frameworkId?: string;
+  /** Products the dish uses, by name. */
+  readonly ingredients: readonly string[];
+}
+
+export interface DraftChangeRequest {
+  /** What the user typed, e.g. "без грибів" or "прибери боул у середу". */
+  readonly instruction: string;
+  readonly entries: readonly DraftEntrySummary[];
+  readonly products: readonly Product[];
+  readonly recipes: readonly { readonly id: string; readonly title: string }[];
+  readonly frameworks: readonly { readonly id: string; readonly title: string }[];
+}
+
+/** The change request read as structured data. */
+export interface DraftChange {
+  /** Products to leave out of every dish of the draft. */
+  readonly excludeProductIds: readonly string[];
+  /** Saved dishes not to use anywhere in the draft any more. */
+  readonly excludeRecipeIds: readonly string[];
+  readonly excludeFrameworkIds: readonly string[];
+  /** Specific draft entries to replace (by index). */
+  readonly replaceEntries: readonly number[];
+  /** What is left of the request for choosing replacements, e.g. "щось м'ясне". */
+  readonly note: string;
+}
+
 /**
  * Everything the app asks an AI to do. Each call may be slow (seconds)
  * and may fail with an AiError; all of them accept an AbortSignal.
@@ -116,4 +150,6 @@ export interface AiService {
   ): Promise<readonly Substitution[]>;
   /** A proposal only: the caller checks it against the draft rules before showing it. */
   draftWeek(request: WeekDraftRequest, signal?: AbortSignal): Promise<readonly DraftEntry[]>;
+  /** Reads a free-text change request for a draft; the caller applies it. */
+  interpretDraftChange(request: DraftChangeRequest, signal?: AbortSignal): Promise<DraftChange>;
 }
