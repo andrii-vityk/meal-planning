@@ -1,5 +1,6 @@
 import { Activity, useState } from "react";
 import { CookView } from "@/ui/features/cook/CookView";
+import { AiLogPanel } from "@/ui/features/data/AiLogPanel";
 import { DataPanel } from "@/ui/features/data/DataPanel";
 import { DishesView } from "@/ui/features/dishes/DishesView";
 import { PlanView } from "@/ui/features/plan/PlanView";
@@ -25,7 +26,12 @@ function SectionContent({ route }: { route: Route }) {
     case "products":
       return <ProductsPanel />;
     case "backup":
-      return <DataPanel />;
+      return (
+        <>
+          <DataPanel />
+          <AiLogPanel />
+        </>
+      );
   }
 }
 

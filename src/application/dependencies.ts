@@ -1,4 +1,5 @@
 import type { AiService } from "@/application/ports/ai";
+import type { AiLogEntry } from "@/application/ports/aiLog";
 import type { BackupCodec } from "@/application/ports/backup";
 import type { FileSaver, PhotoStorage } from "@/application/ports/files";
 import type { Repository } from "@/application/ports/repository";
@@ -19,6 +20,8 @@ export interface AppDependencies {
   readonly shoppingItems: Repository<ManualShoppingItem>;
   readonly shoppingChecks: Repository<ShoppingCheck>;
   readonly ai: AiService;
+  /** Every AI request with its outcome, for diagnosing failures. */
+  readonly aiLog: Repository<AiLogEntry>;
   readonly photos: PhotoStorage;
   readonly files: FileSaver;
   readonly backup: BackupCodec;

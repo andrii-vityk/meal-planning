@@ -1,4 +1,8 @@
 import type { AppDependencies } from "@/application/dependencies";
+import { newId } from "@/application/ids";
+import type { AiLogEntry } from "@/application/ports/aiLog";
+import { LoggingAi } from "@/infrastructure/ai/loggingAi";
+import { parseAiLogEntry, serializeAiLogEntry } from "@/infrastructure/serialization/aiLog";
 import type { ManualShoppingItem, ShoppingCheck, WeekPlanEntry } from "@/domain/weekPlanning";
 import {
   parseFramework,
@@ -28,9 +32,14 @@ export const collections = {
   planEntries: "planEntries",
   shoppingItems: "shoppingItems",
   shoppingChecks: "shoppingChecks",
+  aiLog: "aiLog",
 } as const;
 
 export function createPlatformDependencies(platform: PlatformCapabilities): AppDependencies {
+  const aiLog = new PlatformRepository<AiLogEntry>(platform.db, collections.aiLog, {
+    parse: parseAiLogEntry,
+    serialize: serializeAiLogEntry,
+  });
   return {
     products: new PlatformRepository(platform.db, collections.products, {
       parse: parseProduct,
@@ -56,7 +65,8 @@ export function createPlatformDependencies(platform: PlatformCapabilities): AppD
       parse: parseShoppingCheck,
       serialize: serializeWeekRecord,
     }),
-    ai: new PlatformAi(platform.sample),
+    ai: new LoggingAi(new PlatformAi(platform.sample), aiLog, newId),
+    aiLog,
     photos: new PlatformPhotoStorage(platform.assets),
     files: new PlatformFileSaver(platform.downloads),
     backup: new JsonBackupCodec(),

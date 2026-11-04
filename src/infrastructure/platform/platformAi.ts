@@ -19,6 +19,11 @@ import {
 } from "@/infrastructure/ai/responses";
 import type { PlatformSample, PlatformSampleOptions } from "./runtime";
 
+function describe(error: unknown): string {
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  return typeof error === "string" && error !== "" ? error : "Unknown error";
+}
+
 /** Maps the host's error codes to the app's AiError codes. */
 function toAiError(error: unknown): AiError {
   const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
@@ -38,7 +43,8 @@ function toAiError(error: unknown): AiError {
     case "empty_completion":
       return new AiError("invalidResponse", code);
     default:
-      return new AiError("failed", code || "Unknown error");
+      // Keep whatever the host said: it is what the AI log needs to explain a failure.
+      return new AiError("failed", code || describe(error));
   }
 }
 

@@ -107,6 +107,29 @@
 { "schemaVersion": 1, "weekStart": "2026-11-02", "productId": "<id продукту>", "status": "atHome" }
 ```
 
+### `aiLog`
+
+Журнал AI-запитів для діагностики збоїв. Пише застосунок після кожного запиту; у резервну копію не входить. Зміст запитів і будь-які дані про користувача не зберігаються.
+
+```json
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-04T08:00:00.000Z",
+  "operation": "draftWeek",
+  "durationMs": 41200,
+  "outcome": "error",
+  "errorCode": "failed",
+  "detail": "network_error",
+  "hiddenAtStart": false,
+  "hiddenDuring": true,
+  "hiddenAtEnd": false,
+  "online": true,
+  "mobile": true
+}
+```
+
+`operation` — метод `AiService`; `errorCode` — `AiErrorCode`; `detail` — код або повідомлення хоста (до 300 символів); `hidden*` — чи була сторінка прихована на початку, будь-коли під час і наприкінці запиту.
+
 ## Фото
 
 `recipes.photoAssetId` — id файлу у сховищі артефакту; хост віддає його за адресою `/_blob/<id>`. Фото зменшуються до ~1600 px по довшій стороні перед завантаженням.
