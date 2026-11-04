@@ -69,6 +69,19 @@ describe("today screen", () => {
     expect(window.location.hash).toBe("#recipe-teriyakiChicken");
   });
 
+  it("after returning from a dish opened here, the dishes link opens the list", async () => {
+    renderWithDependencies(<App />, { dependencies: await withTodayPlanned() });
+
+    act(() => fireEvent.click(screen.getByRole("button", { name: strings.today.openDish("Курка теріякі з рисом") })));
+    expect(await screen.findByRole("heading", { level: 2, name: /Курка теріякі/ })).toBeInTheDocument();
+
+    act(() => window.history.back());
+    expect(await screen.findByRole("heading", { level: 2, name: strings.today.heading })).toBeInTheDocument();
+
+    act(() => fireEvent.click(screen.getByRole("link", { name: strings.navigation.dishes })));
+    expect(await screen.findByRole("heading", { level: 2, name: strings.dishes.heading })).toBeInTheDocument();
+  });
+
   it("shows the week when nothing is planned for today, and stays there after planning today", async () => {
     const dependencies = createInMemoryDependencies({ withSampleData: true });
     renderWithDependencies(<App />, { dependencies });

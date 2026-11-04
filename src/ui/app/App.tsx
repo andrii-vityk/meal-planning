@@ -39,16 +39,49 @@ const backupRoute = sectionRoot("backup");
 
 type LastRoutes = Readonly<Partial<Record<Section, Route>>>;
 
+interface Visits {
+  readonly current: Route;
+  /** The last screen seen in each visited section. */
+  readonly lastRoutes: LastRoutes;
+  /**
+   * The current section was entered on one of its inner screens straight
+   * from another section (a dish opened from today's plan). Leaving it then
+   * does not keep that screen: the section's link opens its first screen.
+   */
+  readonly enteredFromOutside: boolean;
+}
+
+const sameRoute = (a: Route | undefined, b: Route) => a !== undefined && formatRoute(a) === formatRoute(b);
+
+/** How the remembered screens change when the route does. */
+function visit(visits: Visits, route: Route): Visits {
+  const previous = visits.current;
+  if (route.section === previous.section) {
+    return { current: route, lastRoutes: { ...visits.lastRoutes, [route.section]: route }, enteredFromOutside: false };
+  }
+  const lastRoutes: Partial<Record<Section, Route>> = { ...visits.lastRoutes };
+  if (visits.enteredFromOutside) lastRoutes[previous.section] = sectionRoot(previous.section);
+  const enteredFromOutside =
+    !sameRoute(sectionRoot(route.section), route) && !sameRoute(lastRoutes[route.section], route);
+  lastRoutes[route.section] = route;
+  return { current: route, lastRoutes, enteredFromOutside };
+}
+
 export function App() {
   const route = useRoute();
 
-  // The last screen seen in each visited section. Updated during render
-  // when the route changes ("storing information from previous renders"),
-  // so there is no extra render with stale data, as an effect would cause.
-  const [lastRoutes, setLastRoutes] = useState<LastRoutes>(() => ({ [route.section]: route }));
-  if (lastRoutes[route.section] !== route) {
-    setLastRoutes({ ...lastRoutes, [route.section]: route });
+  // Updated during render when the route changes ("storing information
+  // from previous renders"), so there is no extra render with stale data,
+  // as an effect would cause.
+  const [visits, setVisits] = useState<Visits>(() => ({
+    current: route,
+    lastRoutes: { [route.section]: route },
+    enteredFromOutside: false,
+  }));
+  if (visits.current !== route) {
+    setVisits(visit(visits, route));
   }
+  const { lastRoutes } = visits;
 
   return (
     <div className={styles.shell}>
