@@ -21,12 +21,13 @@ export interface ManualShoppingItem {
 }
 
 /**
- * What happened to a generated shopping line: bought, or not needed
- * because it is already at home. No record = still to buy.
+ * What happened to a generated shopping line this week: bought; not needed
+ * because it is already at home; or, for a staple, needed after all because
+ * it ran out. No record = the default: buy an ordinary product, skip a staple.
  */
-export type ShoppingStatus = "bought" | "atHome";
+export type ShoppingStatus = "bought" | "atHome" | "needed";
 
-export const shoppingStatuses: readonly ShoppingStatus[] = ["bought", "atHome"];
+export const shoppingStatuses: readonly ShoppingStatus[] = ["bought", "atHome", "needed"];
 
 export interface ShoppingCheck {
   readonly id: string;

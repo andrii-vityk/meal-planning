@@ -3,7 +3,7 @@ import { addShoppingItem, setShoppingStatus } from "@/application/planning";
 import type { IsoDate } from "@/domain/calendar";
 import { startOfWeek } from "@/domain/calendar";
 import type { ShoppingLine } from "@/domain/shoppingList";
-import { buildShoppingList } from "@/domain/shoppingList";
+import { arrangeShoppingList, buildShoppingList } from "@/domain/shoppingList";
 import type { ShoppingStatus } from "@/domain/weekPlanning";
 import { weekPlan } from "@/domain/weekPlanning";
 import { WeekSwitcher } from "@/ui/components/WeekSwitcher";
@@ -45,11 +45,8 @@ export function ShoppingView() {
   const statuses = new Map(
     [...checks.values()].filter((check) => check.weekStart === weekStart).map((check) => [check.productId, check.status]),
   );
-  // Lines already at home leave the list and are collected at the bottom.
-  const toBuy = groups
-    .map((group) => ({ ...group, lines: group.lines.filter((line) => statuses.get(line.productId) !== "atHome") }))
-    .filter((group) => group.lines.length > 0);
-  const atHome = groups.flatMap((group) => group.lines.filter((line) => statuses.get(line.productId) === "atHome"));
+  // Which lines are to buy, at home or left among the staples is a domain rule; the view only renders it.
+  const { toBuy, atHome, staples } = arrangeShoppingList(groups, statuses);
   const manual = [...manualItems.values()].filter((item) => item.weekStart === weekStart);
 
   return (
@@ -60,9 +57,8 @@ export function ShoppingView() {
         </h2>
         <WeekSwitcher weekStart={weekStart} onChange={setWeekStart} />
       </div>
-      <p className="hint">{strings.shopping.stapleNote}</p>
 
-      {groups.length === 0 && manual.length === 0 && <p className="hint">{strings.shopping.empty}</p>}
+      {toBuy.length === 0 && atHome.length === 0 && manual.length === 0 && <p className="hint">{strings.shopping.empty}</p>}
 
       {failed && (
         <p className="error" role="alert">
@@ -78,6 +74,8 @@ export function ShoppingView() {
           <ul className={styles.list}>
             {group.lines.map((line) => {
               const isBought = statuses.get(line.productId) === "bought";
+              // Unticking a staple keeps it on the list (it was asked for); "at home" sends it back to the staples.
+              const notBought: ShoppingStatus | null = line.isStaple ? "needed" : null;
               return (
                 <li key={line.productId} className={styles.manualRow}>
                   <label className={isBought ? `${styles.line} ${styles.done}` : styles.line}>
@@ -85,7 +83,7 @@ export function ShoppingView() {
                       type="checkbox"
                       checked={isBought}
                       aria-label={strings.shopping.bought(line.name)}
-                      onChange={(event) => setStatus(line.productId, event.target.checked ? "bought" : null)}
+                      onChange={(event) => setStatus(line.productId, event.target.checked ? "bought" : notBought)}
                     />
                     <span className={styles.name}>{line.name}</span>
                     <span className={styles.amount}>{describe(line)}</span>
@@ -95,7 +93,7 @@ export function ShoppingView() {
                       type="button"
                       className={styles.atHome}
                       aria-label={strings.shopping.markAtHome(line.name)}
-                      onClick={() => setStatus(line.productId, "atHome")}
+                      onClick={() => setStatus(line.productId, line.isStaple ? null : "atHome")}
                     >
                       {strings.shopping.atHome}
                     </button>
@@ -128,6 +126,29 @@ export function ShoppingView() {
             ))}
           </ul>
         </section>
+      )}
+
+      {staples.length > 0 && (
+        // A native disclosure: collapsed by default, keyboard- and screen-reader-friendly, no React state.
+        <details className={styles.staples}>
+          <summary className={styles.groupHeading}>{strings.shopping.staplesGroup(staples.length)}</summary>
+          <p className="hint">{strings.shopping.staplesHint}</p>
+          <ul className={styles.list}>
+            {staples.map((line) => (
+              <li key={line.productId} className={`${styles.manualRow} ${styles.homeRow}`}>
+                <span className={styles.name}>{line.name}</span>
+                <button
+                  type="button"
+                  className={styles.atHome}
+                  aria-label={strings.shopping.buyStaple(line.name)}
+                  onClick={() => setStatus(line.productId, "needed")}
+                >
+                  {strings.shopping.backToListShort}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       <section className={styles.group} aria-labelledby="shopping-manual">

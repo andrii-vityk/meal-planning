@@ -30,7 +30,7 @@ export interface Product {
   readonly aliases: readonly string[];
   readonly category: ProductCategory;
   readonly nutrition: NutritionFlags;
-  /** Almost always at home: never added to a shopping list. */
+  /** Almost always at home: left off the shopping list unless someone asks for it. */
   readonly isStaple: boolean;
 }
 

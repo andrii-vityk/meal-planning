@@ -1,6 +1,8 @@
 import { frameworks, products, recipes } from "@/domain/__fixtures__/catalog";
 import type { WeekPlan } from "./plan";
-import { buildShoppingList } from "./shoppingList";
+import type { ShoppingGroup } from "./shoppingList";
+import { arrangeShoppingList, buildShoppingList } from "./shoppingList";
+import type { ShoppingStatus } from "./weekPlanning";
 
 const sources = { products, recipes, frameworks };
 
@@ -27,29 +29,47 @@ describe("buildShoppingList", () => {
     ],
   };
 
-  it("buys a dish once however many slots it covers, and skips staples", () => {
+  const ordinary = (groups: readonly ShoppingGroup[]) =>
+    groups
+      .map((group) => ({ ...group, lines: group.lines.filter((line) => !line.isStaple) }))
+      .filter((group) => group.lines.length > 0);
+
+  it("buys a dish once however many slots it covers", () => {
     const list = buildShoppingList(plan, sources);
 
-    expect(list).toEqual([
+    expect(ordinary(list)).toEqual([
       {
         category: "vegetables",
         lines: [
-          { productId: "broccoli", name: "Броколі", quantities: [{ amount: 600, unit: "g" }], hasUnquantifiedUse: false },
-          { productId: "onion", name: "Цибуля", quantities: [{ amount: 0.5, unit: "piece" }], hasUnquantifiedUse: false },
+          { productId: "broccoli", name: "Броколі", quantities: [{ amount: 600, unit: "g" }], hasUnquantifiedUse: false, isStaple: false },
+          { productId: "onion", name: "Цибуля", quantities: [{ amount: 0.5, unit: "piece" }], hasUnquantifiedUse: false, isStaple: false },
         ],
       },
       {
         category: "meat",
-        lines: [{ productId: "chicken", name: "Курка", quantities: [{ amount: 800, unit: "g" }], hasUnquantifiedUse: false }],
+        lines: [{ productId: "chicken", name: "Курка", quantities: [{ amount: 800, unit: "g" }], hasUnquantifiedUse: false, isStaple: false }],
       },
       {
         category: "grains",
-        lines: [{ productId: "rice", name: "Рис", quantities: [{ amount: 400, unit: "g" }], hasUnquantifiedUse: false }],
+        lines: [{ productId: "rice", name: "Рис", quantities: [{ amount: 400, unit: "g" }], hasUnquantifiedUse: false, isStaple: false }],
       },
       {
         category: "legumes",
-        lines: [{ productId: "lentils", name: "Сочевиця", quantities: [{ amount: 150, unit: "g" }], hasUnquantifiedUse: false }],
+        lines: [{ productId: "lentils", name: "Сочевиця", quantities: [{ amount: 150, unit: "g" }], hasUnquantifiedUse: false, isStaple: false }],
       },
+    ]);
+  });
+
+  it("includes staples, flagged, with their amounts", () => {
+    const staples = buildShoppingList(plan, sources)
+      .flatMap((group) => group.lines)
+      .filter((line) => line.isStaple)
+      .map((line) => [line.productId, line.quantities]);
+
+    expect(staples).toEqual([
+      ["garlic", [{ amount: 4, unit: "clove" }]],
+      ["soySauce", [{ amount: 4, unit: "tbsp" }]],
+      ["oliveOil", [{ amount: 1, unit: "tbsp" }]],
     ]);
   });
 
@@ -70,8 +90,8 @@ describe("buildShoppingList", () => {
     );
 
     expect(list.flatMap((group) => group.lines)).toEqual([
-      { productId: "salmon", name: "Лосось", quantities: [], hasUnquantifiedUse: true },
-      { productId: "rice", name: "Рис", quantities: [], hasUnquantifiedUse: true },
+      { productId: "salmon", name: "Лосось", quantities: [], hasUnquantifiedUse: true, isStaple: false },
+      { productId: "rice", name: "Рис", quantities: [], hasUnquantifiedUse: true, isStaple: false },
     ]);
   });
 
@@ -85,5 +105,45 @@ describe("buildShoppingList", () => {
     );
 
     expect(list).toEqual([]);
+  });
+});
+
+describe("arrangeShoppingList", () => {
+  const line = (productId: string, isStaple: boolean) => ({
+    productId,
+    name: productId,
+    quantities: [],
+    hasUnquantifiedUse: true,
+    isStaple,
+  });
+  const groups: ShoppingGroup[] = [
+    { category: "vegetables", lines: [line("broccoli", false), line("garlic", true)] },
+    { category: "meat", lines: [line("chicken", false)] },
+    { category: "oils", lines: [line("oil", true)] },
+  ];
+  const arrange = (statuses: Record<string, ShoppingStatus>) =>
+    arrangeShoppingList(groups, new Map(Object.entries(statuses)));
+  const ids = (lines: readonly { productId: string }[]) => lines.map((item) => item.productId);
+
+  it("keeps staples out of the list by default", () => {
+    const arranged = arrange({});
+
+    expect(arranged.toBuy.map((group) => ids(group.lines))).toEqual([["broccoli"], ["chicken"]]);
+    expect(ids(arranged.staples)).toEqual(["garlic", "oil"]);
+    expect(arranged.atHome).toEqual([]);
+  });
+
+  it("moves a staple to the list when it is needed, and keeps it there once bought", () => {
+    const arranged = arrange({ garlic: "needed", oil: "bought" });
+
+    expect(arranged.toBuy.map((group) => ids(group.lines))).toEqual([["broccoli", "garlic"], ["chicken"], ["oil"]]);
+    expect(arranged.staples).toEqual([]);
+  });
+
+  it("moves an ordinary line that is at home out of the list", () => {
+    const arranged = arrange({ chicken: "atHome", broccoli: "bought" });
+
+    expect(arranged.toBuy.map((group) => ids(group.lines))).toEqual([["broccoli"]]);
+    expect(ids(arranged.atHome)).toEqual(["chicken"]);
   });
 });
