@@ -6,7 +6,7 @@
 import type { IsoDate } from "./calendar";
 import { addDays, weekDates } from "./calendar";
 import type { Framework, FrameworkLookup, SlotOption } from "./framework";
-import type { Dish, MealSlot } from "./plan";
+import type { Dish, MealSlot, PlanEntry } from "./plan";
 import { meals } from "./plan";
 import type { RecipeLookup } from "./recipe";
 import type { WeekPlanEntry } from "./weekPlanning";
@@ -250,4 +250,36 @@ export function applyExclusions(
     }
   }
   return { kept, adjusted, removed };
+}
+
+export interface ReleasedPlan<E extends PlanEntry> {
+  /** The plan as it stands once the slots are released: untouched and shortened entries. */
+  readonly kept: E[];
+  /** Entries that keep some of their slots. */
+  readonly shortened: E[];
+  /** Entries that lose every slot, as they were. */
+  readonly removed: E[];
+}
+
+/**
+ * Frees planned slots so a draft can fill them again. An entry loses only
+ * the released slots (a dish with leftovers keeps its other day); an entry
+ * left with no slots is removed.
+ */
+export function releaseSlots<E extends PlanEntry>(entries: Iterable<E>, slots: Iterable<MealSlot>): ReleasedPlan<E> {
+  const released = new Set([...slots].map(slotKey));
+  const kept: E[] = [];
+  const shortened: E[] = [];
+  const removed: E[] = [];
+  for (const entry of entries) {
+    const rest = entry.slots.filter((slot) => !released.has(slotKey(slot)));
+    if (rest.length === entry.slots.length) kept.push(entry);
+    else if (rest.length === 0) removed.push(entry);
+    else {
+      const changed = { ...entry, slots: rest };
+      kept.push(changed);
+      shortened.push(changed);
+    }
+  }
+  return { kept, shortened, removed };
 }

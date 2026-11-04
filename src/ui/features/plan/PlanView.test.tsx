@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { meals } from "@/domain/plan";
 import { renderApp } from "@/test/renderApp";
 import { strings } from "@/ui/strings/uk";
 
@@ -126,11 +127,91 @@ describe("PlanView", () => {
 
     fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
     const sheet = screen.getByRole("dialog");
-    expect(within(sheet).getByRole("button", { name: strings.plan.cell("субота", strings.meals.dinner) })).toBeDisabled();
+    expect(
+      within(sheet).getByRole("button", { name: strings.plan.cellOccupied("субота", strings.meals.dinner) }),
+    ).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(within(sheet).getByRole("button", { name: strings.plan.cell("неділя", strings.meals.dinner) }));
     fireEvent.click(within(sheet).getByRole("button", { name: strings.draft.generate }));
 
     expect(await screen.findByRole("region", { name: strings.draft.heading })).toHaveTextContent(strings.draft.summary(26));
+  });
+
+  it("plans a ticked planned meal again and replaces its dish on accepting", async () => {
+    vi.setSystemTime(new Date(2026, 10, 2, 12));
+    const { dependencies } = renderApp("plan", { withSampleData: true });
+    await dependencies.planEntries.save({
+      id: "fixed",
+      weekStart: "2026-11-02",
+      dish: { kind: "text", text: "Гості" },
+      servings: 4,
+      slots: [{ date: "2026-11-07", meal: "dinner" }],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
+    const sheet = screen.getByRole("dialog");
+    fireEvent.click(
+      within(sheet).getByRole("button", { name: strings.plan.cellOccupied("субота", strings.meals.dinner) }),
+    );
+    fireEvent.click(within(sheet).getByRole("button", { name: strings.draft.generate }));
+
+    expect(await screen.findByRole("region", { name: strings.draft.heading })).toHaveTextContent(strings.draft.summary(28));
+    // The old dish is shown as gone, but stays stored until the draft is accepted.
+    expect(screen.queryByRole("button", { name: strings.plan.editEntry("Гості") })).not.toBeInTheDocument();
+    expect(dependencies.planEntries.getSnapshot().items.has("fixed")).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: strings.draft.accept }));
+    await waitFor(() => expect(dependencies.planEntries.getSnapshot().items.size).toBe(28));
+    expect(dependencies.planEntries.getSnapshot().items.has("fixed")).toBe(false);
+  });
+
+  it("offers the next week when this one is fully planned", async () => {
+    vi.setSystemTime(new Date(2026, 10, 2, 12));
+    const { dependencies } = renderApp("plan", { withSampleData: true });
+    const days = ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-08"];
+    await dependencies.planEntries.save({
+      id: "all",
+      weekStart: "2026-11-02",
+      dish: { kind: "text", text: "Усе вже є" },
+      servings: 2,
+      slots: days.flatMap((date) => meals.map((meal) => ({ date, meal }))),
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
+    expect(within(screen.getByRole("dialog")).getByText(strings.draft.full)).toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: strings.draft.nextWeek }));
+
+    const sheet = screen.getByRole("dialog");
+    expect(within(sheet).queryByText(strings.draft.full)).not.toBeInTheDocument();
+    expect(within(sheet).getByRole("button", { name: strings.plan.cell("понеділок", strings.meals.lunch) })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("removes a dish from the week and brings it back", async () => {
+    const { dependencies } = renderApp("plan");
+    await dependencies.planEntries.save({
+      id: "soup",
+      weekStart: "2026-11-02",
+      dish: { kind: "text", text: "Суп" },
+      servings: 4,
+      slots: [
+        { date: "2026-11-05", meal: "dinner" },
+        { date: "2026-11-06", meal: "lunch" },
+      ],
+    });
+
+    fireEvent.click(await screen.findByRole("button", { name: strings.plan.removeFromWeek("Суп") }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(strings.plan.removed("Суп"));
+    expect(dependencies.planEntries.getSnapshot().items.has("soup")).toBe(false);
+    expect(screen.queryByRole("button", { name: strings.plan.editEntry("Суп") })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: strings.plan.undoRemove }));
+
+    await waitFor(() => expect(dependencies.planEntries.getSnapshot().items.get("soup")?.slots).toHaveLength(2));
+    expect(screen.getAllByRole("button", { name: strings.plan.editEntry("Суп") })).toHaveLength(2);
   });
 
   it("does not offer days already past for a new draft", () => {

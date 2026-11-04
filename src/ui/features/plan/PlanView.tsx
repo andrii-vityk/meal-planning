@@ -2,13 +2,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { WeekDraftOptions } from "@/application/weekDraft";
 import { draftWeek, reviseDraft, saveDraft } from "@/application/weekDraft";
 import type { IsoDate } from "@/domain/calendar";
-import { startOfWeek, weekDates } from "@/domain/calendar";
+import { addDays, startOfWeek, weekDates } from "@/domain/calendar";
 import { nutritionCoverage } from "@/domain/nutritionCoverage";
 import type { Meal, MealSlot, PlanEntry } from "@/domain/plan";
 import { meals } from "@/domain/plan";
 import { nutrients } from "@/domain/product";
 import type { DraftEntry } from "@/domain/weekDraft";
-import { compareEntries, isIdea } from "@/domain/weekDraft";
+import { compareEntries, isIdea, releaseSlots } from "@/domain/weekDraft";
 import { weekPlan } from "@/domain/weekPlanning";
 import { aiErrorMessage, isCancellation } from "@/ui/aiErrors";
 import { WeekSwitcher } from "@/ui/components/WeekSwitcher";
@@ -55,6 +55,8 @@ export function PlanView() {
   const [instruction, setInstruction] = useState("");
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const [isRevising, setIsRevising] = useState(false);
+  const [removed, setRemoved] = useState<{ readonly entry: PlanEntry; readonly weekStart: IsoDate } | null>(null);
+  const [planError, setPlanError] = useState(false);
   const [isDrafting, startDraftWork] = useTransition();
   const [isAccepting, startAccepting] = useTransition();
   const isDraftBusy = isDrafting || isAccepting;
@@ -65,10 +67,14 @@ export function PlanView() {
   const plan = weekPlan(weekStart, entries.values());
   const weekDraft = draft?.options.weekStart === weekStart ? draft : null;
   const draftEntries = weekDraft?.entries ?? [];
+  // While a draft replans some slots, the dishes there are shown as already gone.
+  const shownEntries = weekDraft?.options.replan
+    ? releaseSlots(plan.entries, weekDraft.options.replan).kept
+    : plan.entries;
 
   // Coverage previews the draft together with what is already planned.
   const preview: PlanEntry[] = [
-    ...plan.entries,
+    ...shownEntries,
     ...draftEntries.map((entry, index) => ({ id: `draft-${index}`, ...entry })),
   ];
   const coverage = nutritionCoverage({ weekStart, entries: preview }, { products, recipes, frameworks });
@@ -147,12 +153,29 @@ export function PlanView() {
     setDraftError(null);
     startAccepting(async () => {
       try {
-        await saveDraft(dependencies, weekStart, weekDraft.entries);
+        await saveDraft(dependencies, weekStart, weekDraft.entries, weekDraft.options.replan);
         setDraft(null);
       } catch {
         setDraftError(strings.draft.acceptFailed);
       }
     });
+  };
+
+  // Removing from the week is one tap; the notice offers to bring the dish back.
+  const removeEntry = (entry: PlanEntry) => {
+    setPlanError(false);
+    dependencies.planEntries.remove(entry.id).then(
+      () => setRemoved({ entry, weekStart }),
+      () => setPlanError(true),
+    );
+  };
+  const undoRemove = () => {
+    if (!removed) return;
+    setPlanError(false);
+    dependencies.planEntries.save({ ...removed.entry, weekStart: removed.weekStart }).then(
+      () => setRemoved(null),
+      () => setPlanError(true),
+    );
   };
 
   const removeFromDraft = (entry: DraftEntry) => {
@@ -235,6 +258,19 @@ export function PlanView() {
           {draftError}
         </p>
       )}
+      {removed && (
+        <p className="notice" role="status">
+          {strings.plan.removed(titleOf(removed.entry))}{" "}
+          <button type="button" className="button button-secondary" onClick={undoRemove}>
+            {strings.plan.undoRemove}
+          </button>
+        </p>
+      )}
+      {planError && (
+        <p className="error" role="alert">
+          {strings.plan.removeFailed}
+        </p>
+      )}
 
       {layer?.kind === "entry" && (
         <PlanEntryPanel weekStart={weekStart} entryId={layer.entryId} onClose={closeLayer} onSaved={closeLayer} />
@@ -244,9 +280,12 @@ export function PlanView() {
       )}
       {layer?.kind === "draft" && (
         <DraftSheet
+          // A new week starts the sheet afresh: its ticks belong to the week shown.
+          key={weekStart}
           weekStart={weekStart}
           occupied={plan.entries.flatMap((entry) => entry.slots)}
           onClose={closeLayer}
+          onNextWeek={() => setWeekStart(addDays(weekStart, 7))}
           onDrafted={(drafted, options) => {
             setDraft({ options, entries: drafted });
             closeLayer();
@@ -282,21 +321,32 @@ export function PlanView() {
                 <div key={meal} className={styles.meal}>
                   <dt className={styles.mealName}>{strings.meals[meal]}</dt>
                   <dd className={styles.mealEntries}>
-                    {plan.entries.map((entry) => {
+                    {shownEntries.map((entry) => {
                       const index = occurs(entry.slots, date, meal);
                       if (index === -1) return null;
                       const title = titleOf(entry);
                       return (
-                        <button
-                          key={entry.id}
-                          type="button"
-                          className={styles.entry}
-                          aria-label={strings.plan.editEntry(title)}
-                          onClick={() => openLayer({ kind: "entry", entryId: entry.id })}
-                        >
-                          {title}
-                          {index > 0 && <span className={styles.leftover}> · {strings.plan.leftovers}</span>}
-                        </button>
+                        <span key={entry.id} className={styles.entryGroup}>
+                          <button
+                            type="button"
+                            className={styles.entry}
+                            aria-label={strings.plan.editEntry(title)}
+                            onClick={() => openLayer({ kind: "entry", entryId: entry.id })}
+                          >
+                            {title}
+                            {index > 0 && <span className={styles.leftover}> · {strings.plan.leftovers}</span>}
+                          </button>
+                          {index === 0 && (
+                            <button
+                              type="button"
+                              className={styles.draftAction}
+                              aria-label={strings.plan.removeFromWeek(title)}
+                              onClick={() => removeEntry(entry)}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </span>
                       );
                     })}
                     {draftEntries.map((entry, entryIndex) => {

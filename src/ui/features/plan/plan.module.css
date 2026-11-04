@@ -204,3 +204,9 @@
   font-size: 0.875rem;
   padding: 4px 12px;
 }
+
+.entryGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}

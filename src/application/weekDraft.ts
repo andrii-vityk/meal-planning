@@ -22,6 +22,7 @@ import {
   openSlots,
   recentRecipeIds,
   recipeExcluded,
+  releaseSlots,
 } from "@/domain/weekDraft";
 import { weekPlan } from "@/domain/weekPlanning";
 
@@ -31,6 +32,8 @@ export interface WeekDraftOptions {
   readonly weekStart: IsoDate;
   /** Slots the user does not want filled. */
   readonly excluded: readonly MealSlot[];
+  /** Planned slots the user wants planned again; their dishes give way when the draft is accepted. */
+  readonly replan?: readonly MealSlot[];
   readonly wishes: string;
   /** Left out of this draft on the user's request. */
   readonly exclusions?: DraftExclusions;
@@ -90,9 +93,10 @@ export async function draftWeek(
   const exclusions = options.exclusions ?? noExclusions;
   const replacing = options.replacing ?? [];
   const week = weekPlan(options.weekStart, data.entries);
+  const released = releaseSlots(week.entries, options.replan ?? []);
   const kept = (options.draft ?? []).filter((entry) => !replacing.includes(entry));
 
-  const planned = [...week.entries, ...kept];
+  const planned = [...released.kept, ...kept];
   const occupied = planned.flatMap((entry) => entry.slots);
   const open =
     replacing.length > 0
@@ -101,7 +105,10 @@ export async function draftWeek(
   if (open.length === 0) return [];
 
   const avoid = recentRecipeIds(data.entries, options.weekStart);
-  for (const entry of [...planned, ...replacing]) if (entry.dish.kind === "recipe") avoid.add(entry.dish.recipeId);
+  // Dishes given way to are not offered again: the user asked for something else.
+  for (const entry of [...planned, ...replacing, ...released.removed]) {
+    if (entry.dish.kind === "recipe") avoid.add(entry.dish.recipeId);
+  }
 
   // Excluded dishes and options are not offered to the model at all.
   const recipes: DraftRecipeOption[] = [...data.recipes.values()]
@@ -251,7 +258,15 @@ export async function saveDraft(
   deps: Pick<AppDependencies, "planEntries">,
   weekStart: IsoDate,
   draft: readonly DraftEntry[],
+  replan: readonly MealSlot[] = [],
 ): Promise<void> {
+  // Planned dishes give way first, so the week never holds two dishes in one slot.
+  const week = weekPlan(weekStart, deps.planEntries.getSnapshot().items.values());
+  const released = releaseSlots(week.entries, replan);
+  await Promise.all([
+    ...released.removed.map((entry) => deps.planEntries.remove(entry.id)),
+    ...released.shortened.map((entry) => deps.planEntries.save({ ...entry, weekStart })),
+  ]);
   await Promise.all(
     draft.map((entry) =>
       deps.planEntries.save({ id: newId(), weekStart, dish: entry.dish, servings: entry.servings, slots: entry.slots }),
