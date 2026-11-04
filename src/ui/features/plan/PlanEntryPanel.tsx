@@ -292,10 +292,12 @@ interface SlotGridProps {
   onToggle: (slot: MealSlot) => void;
   /** Slots that cannot be chosen, by `slotKey`. */
   disabled?: ReadonlySet<string>;
+  /** Slots already planned, by `slotKey`: marked, and chosen only to plan them again. */
+  occupied?: ReadonlySet<string>;
 }
 
 /** Days across, meals down: one tap per meal the dish covers. */
-export function SlotGrid({ weekStart, selected, onToggle, disabled }: SlotGridProps) {
+export function SlotGrid({ weekStart, selected, onToggle, disabled, occupied }: SlotGridProps) {
   const chosen = new Set(selected.map(slotKey));
   const dates = weekDates(weekStart);
   return (
@@ -322,17 +324,22 @@ export function SlotGrid({ weekStart, selected, onToggle, disabled }: SlotGridPr
               {dates.map((date) => {
                 const slot = { date, meal };
                 const isOn = chosen.has(slotKey(slot));
+                const isOccupied = occupied?.has(slotKey(slot)) ?? false;
                 return (
                   <td key={date}>
                     <button
                       type="button"
-                      className={styles.cell}
+                      className={isOccupied ? `${styles.cell} ${styles.occupied}` : styles.cell}
                       aria-pressed={isOn}
                       disabled={disabled?.has(slotKey(slot))}
-                      aria-label={strings.plan.cell(formatWeekday(date), strings.meals[meal])}
+                      aria-label={
+                        isOccupied
+                          ? strings.plan.cellOccupied(formatWeekday(date), strings.meals[meal])
+                          : strings.plan.cell(formatWeekday(date), strings.meals[meal])
+                      }
                       onClick={() => onToggle(slot)}
                     >
-                      {isOn ? "✓" : ""}
+                      {isOn ? (isOccupied ? "↻" : "✓") : isOccupied ? "•" : ""}
                     </button>
                   </td>
                 );

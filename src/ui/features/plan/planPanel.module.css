@@ -127,6 +127,11 @@
   border-style: dashed;
 }
 
+.occupied {
+  color: var(--color-muted);
+  background: var(--color-chip);
+}
+
 .cell[aria-pressed="true"] {
   background: var(--color-accent);
   border-color: var(--color-accent);
@@ -140,4 +145,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.full {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.full p {
+  margin: 0;
 }

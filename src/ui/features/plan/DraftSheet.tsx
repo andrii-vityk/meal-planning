@@ -19,10 +19,12 @@ interface DraftSheetProps {
   occupied: readonly MealSlot[];
   onClose: () => void;
   onDrafted: (entries: DraftEntry[], options: WeekDraftOptions) => void;
+  /** Switches the plan to the next week, keeping this sheet open. */
+  onNextWeek: () => void;
 }
 
 /** What to fill and any wishes; then one AI request for the whole week. */
-export function DraftSheet({ weekStart, occupied, onClose, onDrafted }: DraftSheetProps) {
+export function DraftSheet({ weekStart, occupied, onClose, onDrafted, onNextWeek }: DraftSheetProps) {
   const dependencies = useDependencies();
   const [selected, setSelected] = useState<readonly MealSlot[]>(() =>
     defaultDraftSlots(weekStart, occupied, todayIso()),
@@ -37,6 +39,7 @@ export function DraftSheet({ weekStart, occupied, onClose, onDrafted }: DraftShe
 
   const taken = new Set(occupied.map(slotKey));
   const chosen = new Set(selected.map(slotKey));
+  const isFull = openSlots(weekStart, occupied).length === 0;
 
   const toggle = (slot: MealSlot) =>
     setSelected((current) =>
@@ -54,7 +57,9 @@ export function DraftSheet({ weekStart, occupied, onClose, onDrafted }: DraftShe
     const { signal } = controller.current;
     // Everything open that the user unticked is excluded.
     const excluded = openSlots(weekStart, occupied).filter((slot) => !chosen.has(slotKey(slot)));
-    const options: WeekDraftOptions = { weekStart, excluded, wishes };
+    // Planned slots that are ticked are planned again.
+    const replan = selected.filter((slot) => taken.has(slotKey(slot)));
+    const options: WeekDraftOptions = { weekStart, excluded, wishes, replan };
     startDrafting(async () => {
       try {
         const entries = await draftWeek(dependencies, options, signal);
@@ -74,10 +79,19 @@ export function DraftSheet({ weekStart, occupied, onClose, onDrafted }: DraftShe
         </h2>
         <p className="hint">{strings.draft.intro}</p>
 
+        {isFull && (
+          <div className={styles.full}>
+            <p>{strings.draft.full}</p>
+            <button type="button" className="button button-secondary" onClick={onNextWeek} disabled={isDrafting}>
+              {strings.draft.nextWeek}
+            </button>
+          </div>
+        )}
+
         <fieldset className={styles.when} disabled={isDrafting}>
           <legend className="label">{strings.draft.slots}</legend>
           <p className="hint">{strings.draft.slotsHint}</p>
-          <SlotGrid weekStart={weekStart} selected={selected} onToggle={toggle} disabled={taken} />
+          <SlotGrid weekStart={weekStart} selected={selected} onToggle={toggle} occupied={taken} />
         </fieldset>
 
         <label className="field">

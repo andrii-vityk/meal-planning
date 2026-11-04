@@ -9,6 +9,7 @@ import {
   noExclusions,
   openSlots,
   recentRecipeIds,
+  releaseSlots,
 } from "./weekDraft";
 import type { WeekPlanEntry } from "./weekPlanning";
 
@@ -241,5 +242,34 @@ describe("applyExclusions", () => {
       stew.dish,
       { kind: "framework", frameworkId: "bowl", choices: { base: "bulgur", sauce: "tahini" } },
     ]);
+  });
+});
+
+describe("releaseSlots", () => {
+  const dish = { kind: "text" as const, text: "x" };
+  const soup = {
+    id: "soup",
+    dish,
+    servings: 4,
+    slots: [
+      { date: "2026-11-05", meal: "dinner" as const },
+      { date: "2026-11-06", meal: "lunch" as const },
+    ],
+  };
+  const salad = { id: "salad", dish, servings: 2, slots: [{ date: "2026-11-07", meal: "lunch" as const }] };
+  const fish = { id: "fish", dish, servings: 2, slots: [{ date: "2026-11-08", meal: "dinner" as const }] };
+
+  it("takes only the released slots from a dish, and removes a dish left with none", () => {
+    const released = releaseSlots(
+      [soup, salad, fish],
+      [
+        { date: "2026-11-06", meal: "lunch" },
+        { date: "2026-11-07", meal: "lunch" },
+      ],
+    );
+
+    expect(released.removed).toEqual([salad]);
+    expect(released.shortened).toEqual([{ ...soup, slots: [{ date: "2026-11-05", meal: "dinner" }] }]);
+    expect(released.kept.map((entry) => entry.id)).toEqual(["soup", "fish"]);
   });
 });
