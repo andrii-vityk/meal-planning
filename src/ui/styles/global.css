@@ -47,6 +47,24 @@
   color-scheme: dark;
 }
 
+/* Widths include padding and border everywhere: `width: 100%` never sticks out. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* The page never moves sideways: a scrollbar appearing on a long page does
+   not shift the layout, and nothing can be dragged left or right. */
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
 body {
   margin: 0;
   background: var(--color-bg);

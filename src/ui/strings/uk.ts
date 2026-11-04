@@ -61,7 +61,7 @@ export const strings = {
   navigation: {
     label: "Розділи",
     plan: "План",
-    cook: "Що приготувати",
+    cook: "Що готувати",
     shopping: "Покупки",
     dishes: "Страви",
     products: "Продукти",
