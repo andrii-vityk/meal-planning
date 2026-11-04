@@ -19,6 +19,10 @@
 }
 
 .days {
+  /* Read-only text in the plan: a swipe from anywhere scrolls, never selects. */
+  touch-action: pan-y pinch-zoom;
+  -webkit-user-select: none;
+  user-select: none;
   list-style: none;
   margin: 0;
   padding: 0;
