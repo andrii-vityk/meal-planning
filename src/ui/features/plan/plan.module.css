@@ -195,3 +195,8 @@
 .revise > :global(.input) {
   flex: 1 1 200px;
 }
+
+.backToToday {
+  font-size: 0.875rem;
+  padding: 4px 12px;
+}

@@ -4,9 +4,10 @@ import { draftWeek } from "@/application/weekDraft";
 import type { IsoDate } from "@/domain/calendar";
 import type { MealSlot } from "@/domain/plan";
 import type { DraftEntry } from "@/domain/weekDraft";
-import { openSlots, slotKey } from "@/domain/weekDraft";
+import { defaultDraftSlots, openSlots, slotKey } from "@/domain/weekDraft";
 import { aiErrorMessage, isCancellation } from "@/ui/aiErrors";
 import { Sheet } from "@/ui/components/Sheet";
+import { todayIso } from "@/ui/dates";
 import { useDependencies } from "@/ui/dependencies";
 import { strings } from "@/ui/strings/uk";
 import { SlotGrid } from "./PlanEntryPanel";
@@ -23,7 +24,9 @@ interface DraftSheetProps {
 /** What to fill and any wishes; then one AI request for the whole week. */
 export function DraftSheet({ weekStart, occupied, onClose, onDrafted }: DraftSheetProps) {
   const dependencies = useDependencies();
-  const [selected, setSelected] = useState<readonly MealSlot[]>(() => openSlots(weekStart, occupied));
+  const [selected, setSelected] = useState<readonly MealSlot[]>(() =>
+    defaultDraftSlots(weekStart, occupied, todayIso()),
+  );
   const [wishes, setWishes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isDrafting, startDrafting] = useTransition();

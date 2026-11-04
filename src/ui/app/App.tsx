@@ -3,7 +3,7 @@ import { CookView } from "@/ui/features/cook/CookView";
 import { AiLogPanel } from "@/ui/features/data/AiLogPanel";
 import { DataPanel } from "@/ui/features/data/DataPanel";
 import { DishesView } from "@/ui/features/dishes/DishesView";
-import { PlanView } from "@/ui/features/plan/PlanView";
+import { PlanSection } from "@/ui/features/plan/PlanSection";
 import { ProductsPanel } from "@/ui/features/products/ProductsPanel";
 import { ShoppingView } from "@/ui/features/shopping/ShoppingView";
 import { Navigation } from "@/ui/navigation/Navigation";
@@ -16,7 +16,7 @@ import styles from "./App.module.css";
 function SectionContent({ route }: { route: Route }) {
   switch (route.section) {
     case "plan":
-      return <PlanView />;
+      return <PlanSection screen={route.screen} />;
     case "cook":
       return <CookView />;
     case "shopping":

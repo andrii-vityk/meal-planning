@@ -23,15 +23,30 @@ export type DishScreen =
   | { readonly kind: "frameworkEdit"; readonly frameworkId: string }
   | { readonly kind: "frameworkNew" };
 
+/**
+ * "today" is the plan's first screen: today's meals when something is
+ * planned for today, otherwise the week. "week" is always the week.
+ */
+export type PlanScreen = "today" | "week";
+
 export type Route =
-  | { readonly section: "plan" | "cook" | "shopping" | "products" | "backup" }
+  | { readonly section: "cook" | "shopping" | "products" | "backup" }
+  | { readonly section: "plan"; readonly screen: PlanScreen }
   | { readonly section: "dishes"; readonly screen: DishScreen };
 
 export const dishRoute = (screen: DishScreen): Route => ({ section: "dishes", screen });
+export const planRoute = (screen: PlanScreen): Route => ({ section: "plan", screen });
 
 /** The first screen of each section. */
 export function sectionRoot(section: Section): Route {
-  return section === "dishes" ? dishRoute({ kind: "list" }) : { section };
+  switch (section) {
+    case "dishes":
+      return dishRoute({ kind: "list" });
+    case "plan":
+      return planRoute("today");
+    default:
+      return { section };
+  }
 }
 
 export const defaultRoute: Route = sectionRoot("plan");
@@ -59,6 +74,7 @@ export function parseRoute(hash: string): Route {
   if (isSection(name)) return sectionRoot(name);
   const legacy = legacyAddresses[name];
   if (legacy) return legacy;
+  if (name === "week") return planRoute("week");
   if (name === "recipe-new") return dishRoute({ kind: "recipeNew" });
   if (name === "recipe-import") return dishRoute({ kind: "recipeImport" });
   if (name === "framework-new") return dishRoute({ kind: "frameworkNew" });
@@ -101,5 +117,12 @@ function formatDishScreen(screen: DishScreen): string {
 
 /** The inverse of parseRoute: `parseRoute(formatRoute(route))` equals `route`. */
 export function formatRoute(route: Route): string {
-  return route.section === "dishes" ? formatDishScreen(route.screen) : route.section;
+  switch (route.section) {
+    case "dishes":
+      return formatDishScreen(route.screen);
+    case "plan":
+      return route.screen === "week" ? "week" : "plan";
+    default:
+      return route.section;
+  }
 }
