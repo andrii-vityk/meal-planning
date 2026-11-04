@@ -128,4 +128,47 @@ describe("PlanView", () => {
 
     expect(await screen.findByRole("region", { name: strings.draft.heading })).toHaveTextContent(strings.draft.summary(26));
   });
+
+  describe("changing a draft in words", () => {
+    const draftWeekNow = async () => {
+      fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
+      fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: strings.draft.generate }));
+      return screen.findByRole("region", { name: strings.draft.heading });
+    };
+    const ask = (text: string) => {
+      fireEvent.change(screen.getByLabelText(strings.draft.changeLabel), { target: { value: text } });
+      fireEvent.click(screen.getByRole("button", { name: strings.draft.change }));
+    };
+
+    it("switches the framework option that uses an excluded product and keeps the rest", async () => {
+      const { dependencies } = renderApp("plan", { withSampleData: true });
+      const bar = await draftWeekNow();
+
+      ask("без лосося");
+
+      expect(await within(bar).findByRole("status")).toHaveTextContent(strings.draft.changedCount(20));
+      expect(bar).toHaveTextContent(strings.draft.summary(28));
+
+      const accept = screen.getByRole("button", { name: strings.draft.accept });
+      await waitFor(() => expect(accept).toBeEnabled());
+      fireEvent.click(accept);
+      await waitFor(() => expect(dependencies.planEntries.getSnapshot().items.size).toBe(28));
+      const proteins = [...dependencies.planEntries.getSnapshot().items.values()].flatMap((entry) =>
+        entry.dish.kind === "framework" ? [entry.dish.choices.protein] : [],
+      );
+      expect(proteins).toHaveLength(20);
+      expect(proteins).not.toContain("protein-salmon");
+    });
+
+    it("removes a named dish from the whole draft", async () => {
+      renderApp("plan", { withSampleData: true });
+      const bar = await draftWeekNow();
+
+      ask("прибери боул");
+
+      expect(await within(bar).findByRole("status")).toHaveTextContent(strings.draft.removedOnly);
+      expect(bar).toHaveTextContent(strings.draft.summary(8));
+      expect(screen.queryByRole("button", { name: strings.draft.replace("Боул") })).not.toBeInTheDocument();
+    });
+  });
 });

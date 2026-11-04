@@ -1,8 +1,9 @@
-import type { AiService, RecipeSource, WeekDraftRequest } from "@/application/ports/ai";
+import type { AiService, DraftChangeRequest, RecipeSource, WeekDraftRequest } from "@/application/ports/ai";
 import { AiError } from "@/application/ports/ai";
 import type { Product } from "@/domain/product";
 import {
   classifyProductPrompt,
+  draftChangePrompt,
   matchProductsPrompt,
   parseRecipePrompt,
   substitutionsPrompt,
@@ -10,6 +11,7 @@ import {
 } from "@/infrastructure/ai/prompts";
 import {
   readClassification,
+  readDraftChange,
   readProductMatch,
   readRecipeDraft,
   readSubstitutions,
@@ -99,5 +101,13 @@ export class PlatformAi implements AiService {
       ...PlatformAi.signalOption(signal),
     });
     return readWeekDraft(answer);
+  }
+
+  async interpretDraftChange(request: DraftChangeRequest, signal?: AbortSignal) {
+    const answer = await this.ask(draftChangePrompt(request), {
+      modelTier: "quick",
+      ...PlatformAi.signalOption(signal),
+    });
+    return readDraftChange(answer, request.entries.length);
   }
 }

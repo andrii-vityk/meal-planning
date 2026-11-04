@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { WeekDraftOptions } from "@/application/weekDraft";
-import { draftWeek, saveDraft } from "@/application/weekDraft";
+import { draftWeek, reviseDraft, saveDraft } from "@/application/weekDraft";
 import type { IsoDate } from "@/domain/calendar";
 import { startOfWeek, weekDates } from "@/domain/calendar";
 import { nutritionCoverage } from "@/domain/nutritionCoverage";
@@ -32,6 +32,8 @@ type Layer =
 interface Draft {
   readonly options: WeekDraftOptions;
   readonly entries: readonly DraftEntry[];
+  /** Entries the last change put in: highlighted until the next one. */
+  readonly changed?: ReadonlySet<DraftEntry>;
 }
 
 const occurs = (slots: readonly MealSlot[], date: IsoDate, meal: Meal) =>
@@ -50,6 +52,9 @@ export function PlanView() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [replacing, setReplacing] = useState<DraftEntry | null>(null);
+  const [instruction, setInstruction] = useState("");
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
+  const [isRevising, setIsRevising] = useState(false);
   const [isDrafting, startDraftWork] = useTransition();
   const [isAccepting, startAccepting] = useTransition();
   const isDraftBusy = isDrafting || isAccepting;
@@ -88,7 +93,7 @@ export function PlanView() {
     setReplacing(entry);
     runDraftWork(async (signal) => {
       try {
-        const options = { ...weekDraft.options, draft: weekDraft.entries, replacing: entry };
+        const options = { ...weekDraft.options, draft: weekDraft.entries, replacing: [entry] };
         const alternatives = await draftWeek(dependencies, options, signal);
         if (alternatives.length === 0) {
           setDraftError(strings.draft.noAlternative);
@@ -97,9 +102,33 @@ export function PlanView() {
         setDraft({
           options: weekDraft.options,
           entries: [...weekDraft.entries.filter((item) => item !== entry), ...alternatives].toSorted(compareEntries),
+          changed: new Set(alternatives),
         });
       } finally {
         setReplacing(null);
+      }
+    });
+  };
+
+  const revise = () => {
+    const text = instruction.trim();
+    if (!weekDraft || text === "") return;
+    setDraftNotice(null);
+    setIsRevising(true);
+    runDraftWork(async (signal) => {
+      try {
+        const revision = await reviseDraft(dependencies, weekDraft.options, weekDraft.entries, text, signal);
+        setDraft({ options: revision.options, entries: revision.entries, changed: new Set(revision.changed) });
+        setInstruction("");
+        setDraftNotice(
+          revision.changed.length > 0
+            ? strings.draft.changedCount(revision.changed.length)
+            : revision.entries.length < weekDraft.entries.length
+              ? strings.draft.removedOnly
+              : strings.draft.nothingChanged,
+        );
+      } finally {
+        setIsRevising(false);
       }
     });
   };
@@ -158,11 +187,41 @@ export function PlanView() {
                 controller.current?.abort();
                 setDraft(null);
                 setDraftError(null);
+                setDraftNotice(null);
               }}
             >
               {strings.draft.discard}
             </button>
           </div>
+          <form
+            className={styles.revise}
+            onSubmit={(event) => {
+              event.preventDefault();
+              revise();
+            }}
+          >
+            <input
+              id="draft-instruction"
+              className="input"
+              aria-label={strings.draft.changeLabel}
+              placeholder={strings.draft.changePlaceholder}
+              value={instruction}
+              disabled={isDraftBusy}
+              onChange={(event) => setInstruction(event.target.value)}
+            />
+            <button
+              type="submit"
+              className="button button-secondary"
+              disabled={isDraftBusy || instruction.trim() === ""}
+            >
+              {isRevising ? strings.draft.changing : strings.draft.change}
+            </button>
+          </form>
+          {draftNotice && (
+            <p className="hint" role="status">
+              {draftNotice}
+            </p>
+          )}
         </div>
       ) : (
         <div>
@@ -246,7 +305,12 @@ export function PlanView() {
                       const title = titleOf(entry);
                       const isBusy = replacing === entry;
                       return (
-                        <span key={`draft-${entryIndex}`} className={styles.draftEntry}>
+                        <span
+                          key={`draft-${entryIndex}`}
+                          className={
+                            weekDraft?.changed?.has(entry) ? `${styles.draftEntry} ${styles.draftChanged}` : styles.draftEntry
+                          }
+                        >
                           <span>
                             {title}
                             <span className={styles.leftover}>

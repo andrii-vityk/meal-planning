@@ -1,5 +1,5 @@
 import { AiError } from "@/application/ports/ai";
-import { readClassification, readProductMatch, readRecipeDraft, readSubstitutions, readWeekDraft } from "./responses";
+import { readClassification, readProductMatch, readRecipeDraft, readSubstitutions, readWeekDraft, readDraftChange } from "./responses";
 
 describe("AI answer validation", () => {
   it("keeps only known product ids and removes duplicates", () => {
@@ -75,5 +75,21 @@ describe("AI answer validation", () => {
       { dish: { kind: "text", text: "Яблуко" }, servings: 1, slots: [{ date: "2026-11-04", meal: "snack" }] },
     ]);
     expect(() => readWeekDraft({ plan: [] })).toThrow();
+  });
+
+  it("reads a draft change request and keeps only valid entry numbers", () => {
+    expect(
+      readDraftChange(
+        { excludeProductIds: ["mushrooms", 4], replaceEntries: [0, 2, 2, 9, -1, 1.5, "1"], note: " щось м'ясне " },
+        3,
+      ),
+    ).toEqual({
+      excludeProductIds: ["mushrooms"],
+      excludeRecipeIds: [],
+      excludeFrameworkIds: [],
+      replaceEntries: [0, 2],
+      note: "щось м'ясне",
+    });
+    expect(() => readDraftChange("no", 3)).toThrow();
   });
 });

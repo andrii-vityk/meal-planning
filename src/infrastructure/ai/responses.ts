@@ -3,7 +3,7 @@
  * but its answers are still untrusted: anything unexpected is dropped, and
  * an answer with nothing usable is an AiError("invalidResponse").
  */
-import type { IngredientDraft, ProductClassification, ProductMatch, RecipeDraft, Substitution } from "@/application/ports/ai";
+import type { DraftChange, IngredientDraft, ProductClassification, ProductMatch, RecipeDraft, Substitution } from "@/application/ports/ai";
 import { AiError } from "@/application/ports/ai";
 import { isIsoDate } from "@/domain/calendar";
 import type { Dish, MealSlot } from "@/domain/plan";
@@ -96,4 +96,20 @@ export function readWeekDraft(answer: unknown): DraftEntry[] {
     if (!dish || slots.length === 0) return null;
     return { dish, servings: isPositiveNumber(item.servings) ? item.servings : 0, slots };
   });
+}
+
+export function readDraftChange(answer: unknown, entryCount: number): DraftChange {
+  if (!isRecord(answer)) throw invalid("draft change");
+  const indexes = Array.isArray(answer.replaceEntries) ? answer.replaceEntries : [];
+  return {
+    excludeProductIds: stringArray(answer.excludeProductIds),
+    excludeRecipeIds: stringArray(answer.excludeRecipeIds),
+    excludeFrameworkIds: stringArray(answer.excludeFrameworkIds),
+    replaceEntries: [
+      ...new Set(
+        indexes.filter((value): value is number => Number.isInteger(value) && value >= 0 && value < entryCount),
+      ),
+    ],
+    note: isNonEmptyString(answer.note) ? answer.note.trim() : "",
+  };
 }
