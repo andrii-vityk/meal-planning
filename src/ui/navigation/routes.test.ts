@@ -1,10 +1,11 @@
 import type { Route } from "./routes";
-import { defaultRoute, dishRoute, formatRoute, parseRoute } from "./routes";
+import { defaultRoute, dishRoute, formatRoute, parseRoute, planRoute } from "./routes";
 
 const uuid = "3f2a9c1e-7b4d-4e8a-9c21-5d6e7f8a9b0c";
 
 const examples: readonly [string, Route][] = [
-  ["plan", { section: "plan" }],
+  ["plan", planRoute("today")],
+  ["week", planRoute("week")],
   ["cook", { section: "cook" }],
   ["shopping", { section: "shopping" }],
   ["products", { section: "products" }],
@@ -30,7 +31,7 @@ describe("routes", () => {
     expect(parseRoute("")).toEqual(defaultRoute);
     expect(parseRoute("recipes/123")).toEqual(defaultRoute);
     expect(parseRoute("framework-")).toEqual(defaultRoute);
-    expect(defaultRoute).toEqual({ section: "plan" });
+    expect(defaultRoute).toEqual(planRoute("today"));
   });
 
   it("accepts ids written outside the app", () => {

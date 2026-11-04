@@ -1,7 +1,15 @@
 import type { Framework } from "./framework";
 import type { Recipe } from "./recipe";
 import type { DraftEntry, DraftRules } from "./weekDraft";
-import { acceptDraft, applyExclusions, isIdea, noExclusions, openSlots, recentRecipeIds } from "./weekDraft";
+import {
+  acceptDraft,
+  applyExclusions,
+  defaultDraftSlots,
+  isIdea,
+  noExclusions,
+  openSlots,
+  recentRecipeIds,
+} from "./weekDraft";
 import type { WeekPlanEntry } from "./weekPlanning";
 
 const recipe = (id: string, servings = 4, productIds: readonly string[] = []): Recipe => ({
@@ -52,6 +60,20 @@ const planned = (weekStart: string, recipeId: string): WeekPlanEntry => ({
   dish: { kind: "recipe", recipeId },
   servings: 2,
   slots: [{ date: weekStart, meal: "dinner" }],
+});
+
+describe("defaultDraftSlots", () => {
+  it("offers open slots from today on", () => {
+    const slots = defaultDraftSlots(week, [{ date: "2026-11-06", meal: "dinner" }], "2026-11-06");
+
+    expect(slots.every((slot) => slot.date >= "2026-11-06")).toBe(true);
+    // Friday to Sunday, four meals a day, minus Friday's dinner.
+    expect(slots).toHaveLength(11);
+  });
+
+  it("offers nothing for a week already past", () => {
+    expect(defaultDraftSlots(week, [], "2026-11-20")).toEqual([]);
+  });
 });
 
 describe("openSlots", () => {

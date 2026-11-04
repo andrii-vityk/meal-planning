@@ -1,0 +1,87 @@
+.section {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.titles {
+  display: grid;
+  gap: 2px;
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.date {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.date::first-letter {
+  text-transform: uppercase;
+}
+
+.meals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.meal {
+  display: grid;
+  gap: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.mealName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+
+.dish,
+.dishText {
+  font: inherit;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.dish {
+  padding: 0;
+  color: var(--color-fg);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--color-line);
+  text-underline-offset: 4px;
+}
+
+.dish:hover {
+  text-decoration-color: var(--color-accent);
+}
+
+.note {
+  font-weight: 400;
+  color: var(--color-muted);
+}

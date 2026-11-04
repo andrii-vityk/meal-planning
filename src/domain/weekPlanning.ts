@@ -5,7 +5,8 @@
  * document.
  */
 import type { IsoDate } from "./calendar";
-import type { PlanEntry, WeekPlan } from "./plan";
+import type { Meal, PlanEntry, WeekPlan } from "./plan";
+import { meals } from "./plan";
 
 export interface WeekPlanEntry extends PlanEntry {
   /** Monday of the week the entry belongs to. */
@@ -42,4 +43,22 @@ export function shoppingCheckId(weekStart: IsoDate, productId: string): string {
 
 export function weekPlan(weekStart: IsoDate, entries: Iterable<WeekPlanEntry>): WeekPlan {
   return { weekStart, entries: [...entries].filter((entry) => entry.weekStart === weekStart) };
+}
+
+export interface DayMeal<E extends PlanEntry = PlanEntry> {
+  readonly meal: Meal;
+  readonly entry: E;
+  /** Eaten again from an earlier cooking, not cooked for this slot. */
+  readonly isLeftover: boolean;
+}
+
+/** What is planned on one date, in meal order; meals with nothing planned are left out. */
+export function dayMenu<E extends PlanEntry>(entries: Iterable<E>, date: IsoDate): DayMeal<E>[] {
+  const all = [...entries];
+  return meals.flatMap((meal) =>
+    all.flatMap((entry) => {
+      const index = entry.slots.findIndex((slot) => slot.date === date && slot.meal === meal);
+      return index === -1 ? [] : [{ meal, entry, isLeftover: index > 0 }];
+    }),
+  );
 }

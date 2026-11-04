@@ -275,6 +275,13 @@ export const strings = {
     previous: "Попередній тиждень",
     next: "Наступний тиждень",
   },
+  today: {
+    heading: "Сьогодні",
+    date: (weekday: string, dayMonth: string) => `${weekday}, ${dayMonth}`,
+    wholeWeek: "Весь тиждень",
+    backToToday: "← Сьогодні",
+    openDish: (title: string) => `Відкрити «${title}»`,
+  },
   plan: {
     heading: "План на тиждень",
     add: (meal: string, day: string) => `Додати: ${meal}, ${day}`,
@@ -309,7 +316,7 @@ export const strings = {
     intro:
       "AI заповнить вільні прийоми їжі стравами з ваших рецептів і конструкторів. Нічого не збережеться, доки ви не приймете чернетку.",
     slots: "Що заповнити",
-    slotsHint: "Зняті позначки AI не чіпатиме. Уже заплановане не змінюється.",
+    slotsHint: "Зняті позначки AI не чіпатиме. Уже заплановане не змінюється. Дні, що минули, не позначені — їх можна додати.",
     wishes: "Побажання (необов'язково)",
     wishesPlaceholder: "Напр.: більше риби, у середу щось дуже швидке",
     generate: "Скласти чернетку",

@@ -85,6 +85,8 @@ describe("PlanView", () => {
   });
 
   it("drafts the week with AI, replaces one dish and saves the draft", async () => {
+    // Monday: the whole week is still ahead, so the draft offers every open slot.
+    vi.setSystemTime(new Date(2026, 10, 2, 12));
     const { dependencies } = renderApp("plan", { withSampleData: true });
 
     fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
@@ -111,6 +113,8 @@ describe("PlanView", () => {
   });
 
   it("leaves planned meals alone when drafting", async () => {
+    // Monday: the whole week is still ahead, so the draft offers every open slot.
+    vi.setSystemTime(new Date(2026, 10, 2, 12));
     const { dependencies } = renderApp("plan", { withSampleData: true });
     await dependencies.planEntries.save({
       id: "fixed",
@@ -129,7 +133,25 @@ describe("PlanView", () => {
     expect(await screen.findByRole("region", { name: strings.draft.heading })).toHaveTextContent(strings.draft.summary(26));
   });
 
+  it("does not offer days already past for a new draft", () => {
+    renderApp("plan", { withSampleData: true });
+
+    fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
+    const sheet = screen.getByRole("dialog");
+    const pressed = (day: string) =>
+      within(sheet).getByRole("button", { name: strings.plan.cell(day, strings.meals.lunch) }).getAttribute("aria-pressed");
+
+    expect(pressed("вівторок")).toBe("false");
+    expect(pressed("середа")).toBe("true");
+    expect(pressed("неділя")).toBe("true");
+  });
+
   describe("changing a draft in words", () => {
+    beforeEach(() => {
+      // Monday: the whole week is still ahead, so the draft offers every open slot.
+      vi.setSystemTime(new Date(2026, 10, 2, 12));
+    });
+
     const draftWeekNow = async () => {
       fireEvent.click(screen.getByRole("button", { name: strings.draft.open }));
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: strings.draft.generate }));

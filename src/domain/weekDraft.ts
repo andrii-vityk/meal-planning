@@ -51,6 +51,14 @@ export function openSlots(
     .filter((slot) => !taken.has(slotKey(slot)));
 }
 
+/**
+ * The open slots a new draft fills unless the user changes the choice:
+ * those from today on. Days already past stay open but are not ticked.
+ */
+export function defaultDraftSlots(weekStart: IsoDate, occupied: Iterable<MealSlot>, today: IsoDate): MealSlot[] {
+  return openSlots(weekStart, occupied).filter((slot) => slot.date >= today);
+}
+
 /** Recipes planned in the weeks just before this one. */
 export function recentRecipeIds(entries: Iterable<WeekPlanEntry>, weekStart: IsoDate): Set<string> {
   const from = addDays(weekStart, -7 * recentWeeks);
