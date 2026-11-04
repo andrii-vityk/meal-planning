@@ -108,3 +108,13 @@
   border-bottom: 1px solid var(--color-line);
   color: var(--color-muted);
 }
+
+.staples {
+  display: grid;
+  gap: 6px;
+}
+
+.staples summary {
+  cursor: pointer;
+  padding: 4px 0;
+}
