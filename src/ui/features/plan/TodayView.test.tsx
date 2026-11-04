@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { createInMemoryDependencies } from "@/infrastructure/memory/createInMemoryDependencies";
 import { App } from "@/ui/app/App";
 import { renderWithDependencies } from "@/test/renderWithDependencies";
@@ -45,7 +45,8 @@ describe("today screen", () => {
     expect(screen.getByRole("button", { name: strings.today.openDish("Курка теріякі з рисом") })).toHaveTextContent(
       strings.plan.leftovers,
     );
-    expect(screen.getByText("Яблука й горіхи")).toBeInTheDocument();
+    // The week stays mounted but hidden, so look inside the today screen only.
+    expect(within(screen.getByRole("region", { name: strings.today.heading })).getByText("Яблука й горіхи")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { level: 2, name: strings.plan.heading })).not.toBeInTheDocument();
 
     act(() => fireEvent.click(screen.getByRole("button", { name: strings.today.wholeWeek })));
