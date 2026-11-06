@@ -47,7 +47,6 @@
 }
 
 .tile {
-  --tile-hue: 28;
   flex: none;
   display: grid;
   place-items: center;
@@ -56,20 +55,8 @@
   border-radius: 8px;
   font-weight: 700;
   font-size: 1.4rem;
-  color: hsl(var(--tile-hue) 45% 30%);
-  background: hsl(var(--tile-hue) 55% 88%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .tile {
-    color: hsl(var(--tile-hue) 60% 82%);
-    background: hsl(var(--tile-hue) 30% 22%);
-  }
-}
-
-:root[data-theme="dark"] .tile {
-  color: hsl(var(--tile-hue) 60% 82%);
-  background: hsl(var(--tile-hue) 30% 22%);
+  color: var(--color-tile-fg);
+  background: var(--color-tile-bg);
 }
 
 .tileLarge {
