@@ -74,8 +74,8 @@
 }
 
 .covered {
-  background: var(--color-chip);
-  color: var(--color-fg);
+  background: var(--color-positive-bg);
+  color: var(--color-positive-ink);
 }
 
 .notCovered {

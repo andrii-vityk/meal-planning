@@ -24,9 +24,12 @@
   color: var(--color-fg);
 }
 
+/* The current tab is marked the same way at any width: accent text and an
+   accent bar (underneath here, on top in the phone tab bar below). */
 .link[aria-current="page"] {
-  background: var(--color-fg);
-  color: var(--color-bg);
+  color: var(--color-accent);
+  box-shadow: inset 0 -3px 0 var(--color-accent);
+  border-radius: 0;
 }
 
 /* Phones: a tab bar fixed to the bottom edge, within thumb reach. */

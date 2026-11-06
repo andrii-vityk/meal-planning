@@ -113,7 +113,7 @@
 }
 
 .ok {
-  color: var(--color-accent);
+  color: var(--color-positive);
   font-weight: 500;
 }
 
